@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบริหารและวิเคราะห์ร้านของทอดอัจฉริยะ</title>
+    <!-- Tailwind CSS (v3 Play CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts (Sarabun & Kanit for Thai typography) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        h1, h2, h3, h4, .font-title {
+            font-family: 'Kanit', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-amber-50/30 text-gray-800 min-h-screen">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">🍗</span>
+                    <span class="font-title text-xl font-bold tracking-wide">ระบบบริหารร้านของทอด & คำนวณต้นทุนกล่องอัจฉริยะ</span>
+                </div>
+                <div class="text-sm bg-orange-700/50 px-3 py-1 rounded-full border border-orange-400/30 hidden sm:block">
+                    <i class="fa-solid fa-calculator mr-1"></i> คำนวณสต็อก & ต้นทุนเฉลี่ยรายจ่ายแบบรวมศูนย์
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Tab Navigation Buttons (4 แท็บหลักอย่างเป็นระเบียบ) -->
+        <div class="bg-white rounded-xl shadow-sm p-2 border border-amber-100 mb-8 flex flex-wrap gap-2">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-orange-500 text-white shadow-sm">
+                <i class="fa-solid fa-chart-pie text-lg"></i> แดชบอร์ดภาพรวม
+            </button>
+            <button onclick="switchTab('sales')" id="btn-sales" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
+                <i class="fa-solid fa-receipt text-lg"></i> จัดการยอดขาย
+            </button>
+            <button onclick="switchTab('costs')" id="btn-costs" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
+                <i class="fa-solid fa-wallet text-lg"></i> จัดการต้นทุน & บรรจุภัณฑ์
+            </button>
+            <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
+                <i class="fa-solid fa-sliders text-lg"></i> ⚙️ ตั้งค่าตัวเลือกเมนู
+            </button>
+        </div>
+
+        <!-- ================= TAB 1: DASHBOARD ================= -->
+        <div id="tab-dashboard" class="tab-content block space-y-8">
+            
+            <!-- Time Frame Selector Panel -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📅</span>
+                    <span class="font-title font-bold text-gray-700 text-lg">เลือกช่วงเวลาเพื่อวิเคราะห์ผลงานร้าน:</span>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button onclick="changeTimePeriod('all')" id="period-all" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-orange-500 text-white shadow-sm">
+                        ดูทั้งหมด
+                    </button>
+                    <button onclick="changeTimePeriod('today')" id="period-today" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        รายวัน (วันนี้)
+                    </button>
+                    <button onclick="changeTimePeriod('week')" id="period-week" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        รายสัปดาห์ (สัปดาห์นี้)
+                    </button>
+                    <button onclick="changeTimePeriod('month')" id="period-month" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        รายเดือน (เดือนนี้)
+                    </button>
+                    <button onclick="changeTimePeriod('year')" id="period-year" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        รายปี (ปีนี้)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Card 1: Total Revenue -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">ยอดขายรวมในช่วง</p>
+                        <h3 id="kpi-revenue" class="text-2xl sm:text-3xl font-bold text-emerald-600">฿0</h3>
+                    </div>
+                    <div class="bg-emerald-50 text-emerald-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                </div>
+                <!-- Card 2: Total Cost -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-red-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">ต้นทุนรวมทั้งหมด</p>
+                        <h3 id="kpi-cost" class="text-2xl sm:text-3xl font-bold text-red-500">฿0</h3>
+                    </div>
+                    <div class="bg-red-50 text-red-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-receipt"></i></div>
+                </div>
+                <!-- Card 3: Net Profit -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">กำไรสุทธิในช่วง</p>
+                        <h3 id="kpi-profit" class="text-2xl sm:text-3xl font-bold text-blue-600">฿0</h3>
+                    </div>
+                    <div class="bg-blue-50 text-blue-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-piggy-bank"></i></div>
+                </div>
+                <!-- Card 4: Profit Margin -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-purple-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">อัตรากำไรเฉลี่ย (Margin)</p>
+                        <h3 id="kpi-margin" class="text-2xl sm:text-3xl font-bold text-purple-600">0%</h3>
+                    </div>
+                    <div class="bg-purple-50 text-purple-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-percent"></i></div>
+                </div>
+            </div>
+
+            <!-- Health Status Notification Banner -->
+            <div id="health-banner" class="p-5 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 shadow-sm">
+                <!-- Dynamic Content via JS -->
+            </div>
+
+            <!-- Inventory Low Alerts Panel -->
+            <div id="low-inventory-alerts" class="hidden bg-red-50 border border-red-200 p-5 rounded-2xl space-y-3 shadow-sm">
+                <div class="flex items-center gap-2 text-red-800 font-bold font-title">
+                    <span class="text-xl">⚠️</span>
+                    <span>แจ้งเตือนด่วน: บรรจุภัณฑ์ใกล้หมดคลัง! (กรุณาสั่งซื้อหรือบันทึกเพิ่มสต็อกเข้าระบบ)</span>
+                </div>
+                <div id="alert-items-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-red-700">
+                    <!-- Dynamic Warnings -->
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Cost Breakdown Chart -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                    <h3 class="text-lg font-title font-semibold text-gray-700 mb-4"><i class="fa-solid fa-chart-pie text-amber-500 mr-2"></i>สัดส่วนต้นทุนรวมสะสม</h3>
+                    <div class="relative w-full h-[280px] flex items-center justify-center">
+                        <canvas id="costBreakdownChart"></canvas>
+                    </div>
+                </div>
+                <!-- Product Sales Bar Chart -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                    <h3 class="text-lg font-title font-semibold text-gray-700 mb-4"><i class="fa-solid fa-chart-column text-amber-500 mr-2"></i>ยอดรวมรายได้ของทอดแต่ละเมนู</h3>
+                    <div class="relative w-full h-[280px] flex items-center justify-center">
+                        <canvas id="productSalesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 2: SALES MANAGER ================= -->
+        <div id="tab-sales" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Add New Product Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 h-fit space-y-4">
+                    <h3 class="text-lg font-title font-semibold text-gray-700 border-b pb-2"><i class="fa-solid fa-plus-circle text-orange-500 mr-2"></i>บันทึกยอดขายรายวัน</h3>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">วันที่ทำรายการ</label>
+                        <input type="date" id="sales-date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
+                    </div>
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">เลือกเมนูของทอด</label>
+                            <span onclick="switchTab('settings')" class="text-xs text-orange-500 hover:underline cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> ตั้งค่า/แก้ไขชื่อรายการ</span>
+                        </div>
+                        <select id="sales-dropdown-select" onchange="autoFillProductPrice()" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white">
+                            <!-- Populated dynamically via JS -->
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ราคาต่อชุด (บาท)</label>
+                            <input type="number" id="sales-price" placeholder="40" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">จำนวนที่ขายได้ (ชุด)</label>
+                            <input type="number" id="sales-qty" placeholder="100" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
+                        </div>
+                    </div>
+                    <button onclick="addSalesItem()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-title font-medium py-3 rounded-lg transition-colors cursor-pointer text-center block shadow-sm">
+                        <i class="fa-solid fa-save mr-1"></i> บันทึกรายการยอดขาย
+                    </button>
+                </div>
+
+                <!-- Sales Records Table -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h3 class="text-lg font-title font-semibold text-gray-700"><i class="fa-solid fa-list-check text-orange-500 mr-2"></i>ประวัติการขายทั้งหมด</h3>
+                            <span class="text-xs bg-orange-100 text-orange-800 font-semibold px-2.5 py-1 rounded-full" id="sales-count-badge">0 รายการ</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i> เมื่อระบุจำนวนชุดขายที่นี่ ระบบจะหักลบจำนวนบรรจุภัณฑ์/กล่องอาหารที่ผูกไว้ให้ทันทีโดยอัตโนมัติ</p>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm text-left">
+                                <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-semibold">
+                                    <tr>
+                                        <th class="px-4 py-3">วันที่</th>
+                                        <th class="px-4 py-3">ชื่อเมนู</th>
+                                        <th class="px-4 py-3 text-right">ราคา/ชุด</th>
+                                        <th class="px-4 py-3 text-right">จำนวนที่ขาย</th>
+                                        <th class="px-4 py-3 text-right">รวมรายได้</th>
+                                        <th class="px-4 py-3 text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sales-table-body" class="divide-y divide-gray-100 text-gray-700">
+                                    <!-- Dynamic rows via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TAB 3: CONSOLIDATED COST MANAGER (รวมต้นทุนและบรรจุภัณฑ์) ================= -->
+        <div id="tab-costs" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- บูรณาการ Form: บันทึกต้นทุน/รายจ่าย & บรรจุภัณฑ์ชิ้นเดียวจบ -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 h-fit space-y-4">
+                    <h3 class="text-lg font-title font-semibold text-red-500 border-b pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-wallet text-red-500"></i>
+                        <span>บันทึกต้นทุนรายจ่าย & บรรจุภัณฑ์</span>
+                    </h3>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">วันที่ทำรายการ</label>
+                        <input type="date" id="cost-date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">รายละเอียดรายจ่าย / ชื่อวัสดุ</label>
+                        <input type="text" id="cost-name" placeholder="เช่น ค่าเนื้อสะโพกไก่ 10กก., กล่องใส่อาหาร" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">ประเภทต้นทุน</label>
+                                <span onclick="switchTab('settings')" class="text-xs text-red-500 hover:underline cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> ตั้งค่าตัวเลือก</span>
+                            </div>
+                            <select id="cost-dropdown-select" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">จำนวนเงินรวม (บาท)</label>
+                            <input type="number" id="cost-amount" oninput="calcUnifiedUnitCost()" placeholder="150" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                        </div>
+                    </div>
+
+                    <!-- Toggle บรรจุภัณฑ์ -->
+                    <div class="bg-amber-50/50 p-3 rounded-lg border border-amber-200">
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800">
+                            <input type="checkbox" id="cost-is-packaging" onchange="togglePackagingFields()" class="rounded text-amber-500 focus:ring-amber-500">
+                            <span>📦 รายการนี้คือบรรจุภัณฑ์ (นับสต็อก / คำนวณราคาเฉลี่ย)</span>
+                        </label>
+                    </div>
+
+                    <!-- ฟิลด์ขยายพิเศษสำหรับกล่องบรรจุภัณฑ์ (จะแสดงผลเมื่อติ๊กเลือกด้านบนเท่านั้น) -->
+                    <div id="packaging-fields-wrapper" class="hidden bg-amber-50/20 border border-amber-100 p-4 rounded-xl space-y-3 transition-all duration-300">
+                        <div>
+                            <label class="block text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">จำนวนบรรจุภัณฑ์ที่ได้รับ (ใบ/ชิ้น)</label>
+                            <input type="number" id="cost-qty" oninput="calcUnifiedUnitCost()" placeholder="30" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white">
+                        </div>
+
+                        <!-- คำนวณราคาต่อหน่วยเฉลี่ยใบละกี่บาทให้ทันที -->
+                        <div class="p-2.5 bg-white border border-amber-200 rounded-lg flex justify-between text-xs items-center">
+                            <span class="text-gray-500 font-semibold">ต้นทุนเฉลี่ย:</span>
+                            <span id="cost-unit-cost-feedback" class="font-bold text-orange-600">฿0.00 / ใบ</span>
+                        </div>
+
+                        <!-- เลือกสินค้าที่ต้องการผูกยอดขายเพื่อหักสต็อกบรรจุภัณฑ์อัตโนมัติ (เลือกได้มากกว่า 1 เมนู) -->
+                        <div>
+                            <label class="block text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">ผูกเมนูของทอดที่ใช้บรรจุภัณฑ์นี้ (เลือกได้มากกว่า 1 รายการ)</label>
+                            <div class="border border-gray-200 rounded-lg p-3 bg-white max-h-36 overflow-y-auto space-y-2 text-xs" id="linked-products-checkboxes-container">
+                                <!-- Dynamic checkboxes from JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="addUnifiedCostItem()" class="w-full bg-red-500 hover:bg-red-600 text-white font-title font-medium py-3 rounded-lg transition-colors cursor-pointer text-center block shadow-sm">
+                        <i class="fa-solid fa-save mr-1"></i> บันทึกข้อมูลต้นทุน
+                    </button>
+                </div>
+
+                <!-- ตารางบันทึกประวัติค่าใช้จ่ายแบบรวมบัญชีเดียว -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h3 class="text-lg font-title font-semibold text-gray-700"><i class="fa-solid fa-list-ul text-red-500 mr-2"></i>ประวัติรายจ่าย & คลังบรรจุภัณฑ์สะสม</h3>
+                            <span class="text-xs bg-red-100 text-red-800 font-semibold px-2.5 py-1 rounded-full" id="costs-count-badge">0 รายการ</span>
+                        </div>
+                        <p class="text-xs text-gray-400"><i class="fa-solid fa-circle-info mr-1"></i> รายการบัญชีด้านล่างจะรวมค่าใช้จ่ายทั่วไปและคลังบรรจุภัณฑ์ พร้อมสถานะการตัดจำนวนสต็อกอัตโนมัติ</p>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-xs text-left">
+                                <thead class="bg-gray-50 text-gray-500 uppercase font-semibold">
+                                    <tr>
+                                        <th class="px-3 py-3">วันที่</th>
+                                        <th class="px-3 py-3">รายละเอียดค่าใช้จ่าย</th>
+                                        <th class="px-3 py-3">ประเภทต้นทุน</th>
+                                        <th class="px-3 py-3 text-center">ข้อมูลสต็อก (ถ้ามี)</th>
+                                        <th class="px-3 py-3 text-right">จำนวนรวม (บาท)</th>
+                                        <th class="px-3 py-3 text-center">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="costs-table-body" class="divide-y divide-gray-100 text-gray-700">
+                                    <!-- Dynamic rows via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- ================= TAB 4: SETTINGS (EDITABLE DROPDOWNS) ================= -->
+        <div id="tab-settings" class="tab-content hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- 1. PRODUCT PRESET MANAGER (SALES DROPDOWN EDITOR) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 space-y-4">
+                    <h3 class="text-lg font-title font-semibold text-orange-600 border-b pb-2 flex justify-between items-center">
+                        <span><i class="fa-solid fa-utensils mr-2"></i>จัดการตัวเลือกเมนูของทอด (Dropdown)</span>
+                        <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded font-normal">แก้ไขตัวเลือกยอดขาย</span>
+                    </h3>
+                    
+                    <!-- Add/Edit form for Menu Preset -->
+                    <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-3">
+                        <p class="text-xs font-bold text-amber-800" id="product-form-title">➕ เพิ่มตัวเลือกเมนูใหม่</p>
+                        <input type="hidden" id="edit-prod-id" value="">
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">ชื่อเมนูของทอด</label>
+                                <input type="text" id="preset-prod-name" placeholder="เช่น ไก่ป๊อปเขย่ารสแซ่บ" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">ราคาขายตั้งต้น (บาท/ชุด)</label>
+                                <input type="number" id="preset-prod-price" placeholder="39" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="cancelProductEdit()" id="btn-cancel-prod" class="hidden px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-semibold cursor-pointer">ยกเลิก</button>
+                            <button onclick="saveProductPreset()" class="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs font-semibold cursor-pointer">บันทึกตัวเลือกเมนู</button>
+                        </div>
+                    </div>
+
+                    <!-- List of current product presets -->
+                    <div class="overflow-y-auto max-h-[300px] border border-gray-100 rounded-lg">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-gray-100 text-gray-600 uppercase font-semibold">
+                                <tr>
+                                    <th class="px-3 py-2">ชื่อเมนูใน Dropdown</th>
+                                    <th class="px-3 py-2 text-right">ราคาเริ่มต้น</th>
+                                    <th class="px-3 py-2 text-center">จัดการตัวเลือก</th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-presets-tbody" class="divide-y divide-gray-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. COST CATEGORIES MANAGER (COSTS DROPDOWN EDITOR) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 space-y-4">
+                    <h3 class="text-lg font-title font-semibold text-red-600 border-b pb-2 flex justify-between items-center">
+                        <span><i class="fa-solid fa-tags mr-2"></i>จัดการหมวดหมู่รายจ่ายทั่วไป (Dropdown)</span>
+                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded font-normal">แก้ไขตัวเลือกรายจ่าย</span>
+                    </h3>
+                    
+                    <!-- Add/Edit form for Cost Category Preset -->
+                    <div class="bg-red-50/30 p-4 rounded-xl border border-red-100 space-y-3">
+                        <p class="text-xs font-bold text-red-800" id="cost-form-title">➕ เพิ่มหมวดหมู่ต้นทุนใหม่</p>
+                        <input type="hidden" id="edit-cost-cat-id" value="">
+                        
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">ชื่อหมวดหมู่ต้นทุน</label>
+                            <input type="text" id="preset-cat-name" placeholder="เช่น ค่าน้ำมันและพลังงานทอด" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
+                        </div>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="cancelCategoryEdit()" id="btn-cancel-cat" class="hidden px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-semibold cursor-pointer">ยกเลิก</button>
+                            <button onclick="saveCostCategoryPreset()" class="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-semibold cursor-pointer">บันทึกตัวเลือกหมวดหมู่</button>
+                        </div>
+                    </div>
+
+                    <!-- List of current cost presets -->
+                    <div class="overflow-y-auto max-h-[300px] border border-gray-100 rounded-lg">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-gray-100 text-gray-600 uppercase font-semibold">
+                                <tr>
+                                    <th class="px-3 py-2">ชื่อหมวดหมู่ต้นทุนใน Dropdown</th>
+                                    <th class="px-3 py-2 text-center">จัดการตัวเลือก</th>
+                                </tr>
+                            </thead>
+                            <tbody id="category-presets-tbody" class="divide-y divide-gray-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer / Reset Data Button -->
+        <div class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
+            <span class="text-xs text-gray-400">🍗 ระบบประมวลผลวิเคราะห์และเก็บข้อมูลบนเบราว์เซอร์เครื่องนี้ส่วนตัว (LocalStorage Saved)</span>
+            <button onclick="resetToDemoData()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-4 rounded-lg font-medium transition-colors cursor-pointer">
+                <i class="fa-solid fa-rotate-left mr-1"></i> ล้างข้อมูลและโหลดชุดตัวอย่างเพื่อทดลองใช้ใหม่
+            </button>
+        </div>
+
+    </div>
+
+    <!-- BUSINESS APP CODE & DATA HANDLING -->
+    <script>
+        // 1. Initial Default Presets for Dropdowns
+        const defaultProductPresets = [
+            { id: 'p1', name: 'ไก่ทอดหาดใหญ่แป้งกรอบ', defaultPrice: 45 },
+            { id: 'p2', name: 'เฟรนช์ฟรายส์เขย่ารสชีส', defaultPrice: 35 },
+            { id: 'p3', name: 'ลูกชิ้นแดงและไส้กรอกทอด', defaultPrice: 20 }
+        ];
+
+        const defaultCostPresets = [
+            { id: 'c1', name: 'วัตถุดิบหลัก (เนื้อสัตว์/แป้ง/ปรุงรส)' },
+            { id: 'c2', name: 'น้ำมันพืชสำหรับทอด & แก๊สหุงต้ม' },
+            { id: 'c3', name: 'กล่อง/ถุง/บรรจุภัณฑ์' },
+            { id: 'c4', name: 'ต้นทุนคงที่ (ค่าที่เช่าร้านรายวัน/ค่าแรงช่วยเหลือ)' }
+        ];
+
+        // 2. Initial Transactional Demo Records (Integrated both general costs & packaging items into costsList)
+        const initialSales = [
+            { id: 's1', date: '2026-07-13', name: 'ไก่ทอดหาดใหญ่แป้งกรอบ', price: 45, sold: 120 },
+            { id: 's2', date: '2026-07-12', name: 'เฟรนช์ฟรายส์เขย่ารสชีส', price: 35, sold: 90 },
+            { id: 's3', date: '2026-07-10', name: 'ลูกชิ้นแดงและไส้กรอกทอด', price: 20, sold: 180 }
+        ];
+
+        const initialCosts = [
+            { id: 'c_rec1', date: '2026-07-13', name: 'สะโพกไก่และปีกไก่สดยกลัง (15 กก.)', category: 'วัตถุดิบหลัก (เนื้อสัตว์/แป้ง/ปรุงรส)', cost: 1650, isPackaging: false },
+            { id: 'c_rec2', date: '2026-07-13', name: 'กล่องกระดาษพรีเมียมใส่ไก่ทอด', category: 'กล่อง/ถุง/บรรจุภัณฑ์', cost: 100, isPackaging: true, qty: 20, used: 20, remaining: 0, unitCost: 5, linkedProducts: ['ไก่ทอดหาดใหญ่แป้งกรอบ'] },
+            { id: 'c_rec3', date: '2026-07-12', name: 'น้ำมันพืชทอดอย่างดี (5 แกลลอน)', category: 'น้ำมันพืชสำหรับทอด & แก๊สหุงต้ม', cost: 265, isPackaging: false },
+            { id: 'c_rec4', date: '2026-07-12', name: 'ถุงหูหิ้วพลาสติกกันความร้อน', category: 'กล่อง/ถุง/บรรจุภัณฑ์', cost: 150, isPackaging: true, qty: 150, used: 150, remaining: 0, unitCost: 1, linkedProducts: ['all_menus'] },
+            { id: 'c_rec5', date: '2026-07-10', name: 'จ่ายค่าเช่ารายวันล่วงหน้า 7 วัน', category: 'ต้นทุนคงที่ (ค่าที่เช่าร้านรายวัน/ค่าแรงช่วยเหลือ)', cost: 700, isPackaging: false }
+        ];
+
+        // 3. State Management (โหลดประวัติจาก Browser หรือใช้ชุด Default)
+        let productPresetsList = JSON.parse(localStorage.getItem('fried_product_presets')) || defaultProductPresets;
+        let costPresetsList = JSON.parse(localStorage.getItem('fried_cost_presets')) || defaultCostPresets;
+        let salesList = JSON.parse(localStorage.getItem('fried_sales_v2')) || initialSales;
+        let costsList = JSON.parse(localStorage.getItem('fried_costs_v3')) || initialCosts;
+        
+        // MIGRATION CODE: หากผู้ใช้เคยใช้ระบบที่มี "inventoryList" แยกต่างหาก จะถูกรวบรวมเข้าบัญชี costsList แบบใหม่อัตโนมัติเพื่อไม่ให้ข้อมูลหาย
+        const oldInventory = JSON.parse(localStorage.getItem('fried_inventory_v3')) || [];
+        if (oldInventory.length > 0) {
+            oldInventory.forEach(inv => {
+                const isDuplicated = costsList.some(c => c.id === inv.id);
+                if (!isDuplicated) {
+                    costsList.push({
+                        id: inv.id,
+                        date: inv.date,
+                        name: inv.name,
+                        category: 'กล่อง/ถุง/บรรจุภัณฑ์',
+                        cost: inv.totalCost,
+                        isPackaging: true,
+                        qty: inv.qty,
+                        used: inv.used || 0,
+                        remaining: inv.remaining || inv.qty,
+                        unitCost: inv.unitCost,
+                        linkedProducts: inv.linkedProducts
+                    });
+                }
+            });
+            localStorage.removeItem('fried_inventory_v3');
+        }
+
+        let activePeriodFilter = localStorage.getItem('fried_period_filter') || 'all';
+
+        // Chart References
+        let costChart = null;
+        let salesChart = null;
+
+        // Custom Toast Notification System (แทนการใช้ alert แบบเดิม)
+        function showToast(message, type = 'info') {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'fixed top-5 right-5 z-[9999] flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0';
+                document.body.appendChild(container);
+            }
+            
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-emerald-500' : 'bg-orange-500';
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-lg flex items-center justify-between gap-3 transform translate-y-2 opacity-0 transition-all duration-300`;
+            toast.innerHTML = `
+                <span class="text-sm font-medium font-title">${message}</span>
+                <button class="text-white hover:text-gray-200 cursor-pointer" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Save State to Browser Cache (LocalStorage)
+        function saveState() {
+            localStorage.setItem('fried_product_presets', JSON.stringify(productPresetsList));
+            localStorage.setItem('fried_cost_presets', JSON.stringify(costPresetsList));
+            localStorage.setItem('fried_sales_v2', JSON.stringify(salesList));
+            localStorage.setItem('fried_costs_v3', JSON.stringify(costsList));
+            localStorage.setItem('fried_period_filter', activePeriodFilter);
+        }
+
+        // Tab Navigation Controller
+        function switchTab(tabName) {
+            const tabs = ['dashboard', 'sales', 'costs', 'settings'];
+            tabs.forEach(tab => {
+                const tabEl = document.getElementById(`tab-${tab}`);
+                const btnEl = document.getElementById(`btn-${tab}`);
+                
+                if (tab === tabName) {
+                    tabEl.classList.remove('hidden');
+                    tabEl.classList.add('block');
+                    btnEl.className = "tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-orange-500 text-white shadow-sm";
+                } else {
+                    tabEl.classList.add('hidden');
+                    tabEl.classList.remove('block');
+                    btnEl.className = "tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100";
+                }
+            });
+            
+            calculateAndUpdateUI();
+        }
+
+        // Change Filter Period Function
+        function changeTimePeriod(period) {
+            activePeriodFilter = period;
+            
+            const periods = ['all', 'today', 'week', 'month', 'year'];
+            periods.forEach(p => {
+                const btn = document.getElementById(`period-${p}`);
+                if (p === period) {
+                    btn.className = "period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-orange-500 text-white shadow-sm";
+                } else {
+                    btn.className = "period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200";
+                }
+            });
+
+            saveState();
+            calculateAndUpdateUI();
+        }
+
+        // Date Period Matcher Helpers
+        function checkDateInPeriod(recordDateStr) {
+            if (!recordDateStr) return false;
+            if (activePeriodFilter === 'all') return true;
+
+            const recordDate = new Date(recordDateStr + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            if (activePeriodFilter === 'today') {
+                const recordString = recordDate.toISOString().split('T')[0];
+                const todayString = today.toISOString().split('T')[0];
+                return recordString === todayString;
+            }
+
+            if (activePeriodFilter === 'week') {
+                const day = today.getDay();
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                const startOfWeek = new Date(today.setDate(diff));
+                startOfWeek.setHours(0,0,0,0);
+                
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                endOfWeek.setHours(23,59,59,999);
+
+                return recordDate >= startOfWeek && recordDate <= endOfWeek;
+            }
+
+            if (activePeriodFilter === 'month') {
+                return recordDate.getFullYear() === today.getFullYear() && recordDate.getMonth() === today.getMonth();
+            }
+
+            if (activePeriodFilter === 'year') {
+                return recordDate.getFullYear() === today.getFullYear();
+            }
+
+            return true;
+        }
+
+        // Get Local Date String (YYYY-MM-DD)
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Auto-Fill Product Price based on Selected Dropdown Option
+        function autoFillProductPrice() {
+            const dropdown = document.getElementById('sales-dropdown-select');
+            const selectedVal = dropdown.value;
+            const targetProductPreset = productPresetsList.find(p => p.name === selectedVal);
+            if (targetProductPreset) {
+                document.getElementById('sales-price').value = targetProductPreset.defaultPrice;
+            } else {
+                document.getElementById('sales-price').value = '';
+            }
+        }
+
+        // Toggle visibility of packaging fields dynamically
+        function togglePackagingFields() {
+            const isPkg = document.getElementById('cost-is-packaging').checked;
+            const wrapper = document.getElementById('packaging-fields-wrapper');
+            if (isPkg) {
+                wrapper.classList.remove('hidden');
+            } else {
+                wrapper.classList.add('hidden');
+            }
+        }
+
+        // Live calculation feedback for box unit cost (Unified Form)
+        function calcUnifiedUnitCost() {
+            const totalCost = parseFloat(document.getElementById('cost-amount').value) || 0;
+            const qty = parseFloat(document.getElementById('cost-qty').value) || 0;
+            const feedbackLabel = document.getElementById('cost-unit-cost-feedback');
+
+            if (totalCost > 0 && qty > 0) {
+                const unitCost = totalCost / qty;
+                feedbackLabel.innerText = '฿' + unitCost.toFixed(2) + ' / ใบ';
+            } else {
+                feedbackLabel.innerText = '฿0.00 / ใบ';
+            }
+        }
+
+        // --- SALES REGISTRATION ---
+        function addSalesItem() {
+            const date = document.getElementById('sales-date').value;
+            const name = document.getElementById('sales-dropdown-select').value;
+            const price = parseFloat(document.getElementById('sales-price').value) || 0;
+            const qty = parseFloat(document.getElementById('sales-qty').value) || 0;
+
+            if (!date) {
+                showToast('กรุณาเลือกวันที่บันทึกยอดขายด้วยครับ', 'error');
+                return;
+            }
+            if (!name) {
+                showToast('กรุณาเลือกเมนูของทอดในระบบก่อนครับ', 'error');
+                return;
+            }
+            if (qty <= 0) {
+                showToast('กรุณากรอกจำนวนที่ขายได้อย่างน้อย 1 ชุดครับ', 'error');
+                return;
+            }
+
+            const newItem = {
+                id: 's-rec-' + Date.now(),
+                date: date,
+                name: name,
+                price: price,
+                sold: qty
+            };
+
+            salesList.unshift(newItem);
+            saveState();
+            calculateAndUpdateUI();
+
+            document.getElementById('sales-qty').value = '';
+            showToast('บันทึกยอดขายสำเร็จ!', 'success');
+        }
+
+        function deleteSalesItem(id) {
+            salesList = salesList.filter(item => item.id !== id);
+            saveState();
+            calculateAndUpdateUI();
+            showToast('ลบรายการยอดขายแล้ว', 'info');
+        }
+
+        // --- UNIFIED COSTS & PACKAGING REGISTRATION ---
+        function addUnifiedCostItem() {
+            const date = document.getElementById('cost-date').value;
+            const name = document.getElementById('cost-name').value.trim();
+            const category = document.getElementById('cost-dropdown-select').value;
+            const amount = parseFloat(document.getElementById('cost-amount').value) || 0;
+            const isPackaging = document.getElementById('cost-is-packaging').checked;
+
+            if (!date) {
+                showToast('กรุณาเลือกวันที่ทำรายการด้วยครับ', 'error');
+                return;
+            }
+            if (!name) {
+                showToast('กรุณากรอกรายละเอียดรายจ่ายด้วยครับ', 'error');
+                return;
+            }
+            if (!category) {
+                showToast('กรุณาเลือกประเภทของต้นทุนด้วยครับ', 'error');
+                return;
+            }
+            if (amount <= 0) {
+                showToast('กรุณาระบุราคาต้นทุนจ่ายที่มากกว่า 0 บาทครับ', 'error');
+                return;
+            }
+
+            let newItem = {
+                id: 'c-rec-' + Date.now(),
+                date: date,
+                name: name,
+                category: category,
+                cost: amount,
+                isPackaging: isPackaging
+            };
+
+            // หากรายการนั้นเป็นบรรจุภัณฑ์ ต้องดึงข้อมูลสต็อกและการผูกเมนู
+            if (isPackaging) {
+                const qty = parseFloat(document.getElementById('cost-qty').value) || 0;
+                const checkedBoxes = document.querySelectorAll('.inv-link-checkbox:checked');
+                const linkedProducts = Array.from(checkedBoxes).map(cb => cb.value);
+
+                if (qty <= 0) {
+                    showToast('สำหรับบรรจุภัณฑ์ กรุณาระบุจำนวนชิ้นที่ได้รับให้ถูกต้องด้วยครับ', 'error');
+                    return;
+                }
+                if (linkedProducts.length === 0) {
+                    showToast('กรุณาผูกเมนูของทอดที่ใช้ร่วมกันอย่างน้อย 1 รายการครับ', 'error');
+                    return;
+                }
+
+                newItem.qty = qty;
+                newItem.unitCost = amount / qty;
+                newItem.linkedProducts = linkedProducts;
+                newItem.used = 0;
+                newItem.remaining = qty;
+            }
+
+            costsList.unshift(newItem);
+            saveState();
+            calculateAndUpdateUI();
+
+            // ล้างข้อมูลฟอร์ม
+            document.getElementById('cost-name').value = '';
+            document.getElementById('cost-amount').value = '';
+            document.getElementById('cost-qty').value = '';
+            document.getElementById('cost-is-packaging').checked = false;
+            document.getElementById('cost-unit-cost-feedback').innerText = '฿0.00 / ใบ';
+            togglePackagingFields();
+
+            showToast('บันทึกต้นทุนรายจ่ายเสร็จสิ้น!', 'success');
+        }
+
+        function deleteCostItem(id) {
+            costsList = costsList.filter(item => item.id !== id);
+            saveState();
+            calculateAndUpdateUI();
+            showToast('ลบรายการต้นทุนแล้ว', 'info');
+        }
+
+        // ==========================================
+        //  ⚙️ SETTINGS & DYNAMIC DROPDOWN CONTROLLERS
+        // ==========================================
+
+        function saveProductPreset() {
+            const id = document.getElementById('edit-prod-id').value;
+            const name = document.getElementById('preset-prod-name').value.trim();
+            const price = parseFloat(document.getElementById('preset-prod-price').value) || 0;
+
+            if (!name) {
+                showToast('กรุณาระบุชื่อเมนูของทอดด้วยครับ', 'error');
+                return;
+            }
+
+            if (id) {
+                const index = productPresetsList.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    productPresetsList[index].name = name;
+                    productPresetsList[index].defaultPrice = price;
+                }
+            } else {
+                const isDuplicate = productPresetsList.some(p => p.name.toLowerCase() === name.toLowerCase());
+                if (isDuplicate) {
+                    showToast('ชื่อเมนูของทอดนี้ซ้ำในระบบแล้ว!', 'error');
+                    return;
+                }
+                const newPreset = {
+                    id: 'p-' + Date.now(),
+                    name: name,
+                    defaultPrice: price
+                };
+                productPresetsList.push(newPreset);
+            }
+
+            saveState();
+            cancelProductEdit();
+            calculateAndUpdateUI();
+            showToast('บันทึกตัวเลือกเมนูเรียบร้อย', 'success');
+        }
+
+        function editProductPreset(id) {
+            const product = productPresetsList.find(p => p.id === id);
+            if (!product) return;
+
+            document.getElementById('edit-prod-id').value = product.id;
+            document.getElementById('preset-prod-name').value = product.name;
+            document.getElementById('preset-prod-price').value = product.defaultPrice;
+            
+            document.getElementById('product-form-title').innerText = "✏️ แก้ไขชื่อเมนูของทอด";
+            document.getElementById('btn-cancel-prod').classList.remove('hidden');
+        }
+
+        function deleteProductPreset(id) {
+            if (productPresetsList.length <= 1) {
+                showToast('ระบบจำเป็นต้องเก็บเมนูของทอดไว้อย่างน้อย 1 เมนูเสมอครับ', 'error');
+                return;
+            }
+            if (confirm('คุณแน่ใจว่าต้องการลบเมนูของทอดนี้ออกจากระบบ Dropdown?')) {
+                productPresetsList = productPresetsList.filter(p => p.id !== id);
+                saveState();
+                calculateAndUpdateUI();
+                showToast('ลบตัวเลือกเมนูแล้ว', 'info');
+            }
+        }
+
+        function cancelProductEdit() {
+            document.getElementById('edit-prod-id').value = '';
+            document.getElementById('preset-prod-name').value = '';
+            document.getElementById('preset-prod-price').value = '';
+            
+            document.getElementById('product-form-title').innerText = "➕ เพิ่มตัวเลือกเมนูใหม่";
+            document.getElementById('btn-cancel-prod').classList.add('hidden');
+        }
+
+        function saveCostCategoryPreset() {
+            const id = document.getElementById('edit-cost-cat-id').value;
+            const name = document.getElementById('preset-cat-name').value.trim();
+
+            if (!name) {
+                showToast('กรุณากรอกชื่อหมวดหมู่ต้นทุนด้วยครับ', 'error');
+                return;
+            }
+
+            if (id) {
+                const index = costPresetsList.findIndex(c => c.id === id);
+                if (index !== -1) {
+                    costPresetsList[index].name = name;
+                }
+            } else {
+                const isDuplicate = costPresetsList.some(c => c.name.toLowerCase() === name.toLowerCase());
+                if (isDuplicate) {
+                    showToast('หมวดหมู่ต้นทุนชื่อนี้มีอยู่ในระบบแล้ว!', 'error');
+                    return;
+                }
+                const newPreset = {
+                    id: 'c-cat-' + Date.now(),
+                    name: name
+                };
+                costPresetsList.push(newPreset);
+            }
+
+            saveState();
+            cancelCategoryEdit();
+            calculateAndUpdateUI();
+            showToast('บันทึกประเภทต้นทุนเรียบร้อย', 'success');
+        }
+
+        function editCostCategoryPreset(id) {
+            const category = costPresetsList.find(c => c.id === id);
+            if (!category) return;
+
+            document.getElementById('edit-cost-cat-id').value = category.id;
+            document.getElementById('preset-cat-name').value = category.name;
+            
+            document.getElementById('cost-form-title').innerText = "✏️ แก้ไขหมวดหมู่ต้นทุน";
+            document.getElementById('btn-cancel-cat').classList.remove('hidden');
+        }
+
+        function deleteCostCategoryPreset(id) {
+            if (costPresetsList.length <= 1) {
+                showToast('คุณต้องมีหมวดหมู่ต้นทุนค้างไว้อย่างน้อย 1 ประเภทเสมอครับ', 'error');
+                return;
+            }
+            if (confirm('คุณแน่ใจว่าต้องการลบประเภทหมวดหมู่นี้ออกจากระบบ?')) {
+                costPresetsList = costPresetsList.filter(c => c.id !== id);
+                saveState();
+                calculateAndUpdateUI();
+                showToast('ลบประเภทต้นทุนแล้ว', 'info');
+            }
+        }
+
+        function cancelCategoryEdit() {
+            document.getElementById('edit-cost-cat-id').value = '';
+            document.getElementById('preset-cat-name').value = '';
+            
+            document.getElementById('cost-form-title').innerText = "➕ เพิ่มหมวดหมู่ต้นทุนใหม่";
+            document.getElementById('btn-cancel-cat').classList.add('hidden');
+        }
+
+        // --- RESET DEMO SYSTEM ---
+        function resetToDemoData() {
+            if (confirm('ระบบจะเขียนทับตัวเลขปัจจุบันของคุณทั้งหมดและเรียกข้อมูลชุดสาธิตตั้งต้นกลับมา เพื่อทดลองใช้งานใหม่ ยืนยันใช่หรือไม่?')) {
+                productPresetsList = [...defaultProductPresets];
+                costPresetsList = [...defaultCostPresets];
+                salesList = [...initialSales];
+                costsList = [...initialCosts];
+                activePeriodFilter = 'all';
+                
+                changeTimePeriod('all');
+                saveState();
+                calculateAndUpdateUI();
+                showToast('รีเซ็ตข้อมูลตัวอย่างเรียบร้อยแล้ว!', 'success');
+            }
+        }
+
+        // ==================================================
+        //  FIFO MULTI-MENU INVENTORY DELETION CALCULATIONS
+        // ==================================================
+        function calculateInventoryDepletion() {
+            // คืนค่าสต็อกคงเหลือสะสมกลับจุดตั้งต้นก่อนคำนวณ FIFO ใหม่ในทุกๆ ครั้งที่มีการรีโหลดหรืออัปเดตข้อมูล
+            costsList.forEach(item => {
+                if (item.isPackaging) {
+                    item.used = 0;
+                    item.remaining = item.qty;
+                }
+            });
+
+            // จัดเรียงวันที่ยอดขายจากเก่าไปหาใหม่ (FIFO)
+            const chronologicalSales = [...salesList].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // คัดแยกและจัดเรียงคลังบรรจุภัณฑ์สะสมในต้นทุนจากล็อตเก่าไปหาล็อตใหม่
+            const packagingBatches = costsList.filter(item => item.isPackaging === true).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            chronologicalSales.forEach(sale => {
+                let remainingSalesQty = sale.sold;
+
+                for (let i = 0; i < packagingBatches.length; i++) {
+                    const batch = packagingBatches[i];
+                    if (remainingSalesQty <= 0) break;
+
+                    // ตรวจสอบการผูกมัดเมนูของบรรจุภัณฑ์นั้นๆ
+                    const isLinked = batch.linkedProducts && (
+                        batch.linkedProducts.includes('all_menus') || 
+                        batch.linkedProducts.includes(sale.name)
+                    );
+
+                    if (isLinked && batch.remaining > 0) {
+                        const deduction = Math.min(remainingSalesQty, batch.remaining);
+                        batch.remaining -= deduction;
+                        batch.used += deduction;
+                        remainingSalesQty -= deduction;
+                    }
+                }
+            });
+
+            // อัปเดตข้อมูลที่คำนวณได้กลับไปยัง costsList หลัก
+            costsList.forEach(originalItem => {
+                if (originalItem.isPackaging) {
+                    const calculated = packagingBatches.find(item => item.id === originalItem.id);
+                    if (calculated) {
+                        originalItem.used = calculated.used;
+                        originalItem.remaining = calculated.remaining;
+                    }
+                }
+            });
+        }
+
+        // ==================================================
+        //  MAIN RENDERER, MATH ENGINE & GRAPHICS COMPILER
+        // ==================================================
+        function calculateAndUpdateUI() {
+            if (!document.getElementById('sales-date').value) document.getElementById('sales-date').value = getTodayDateString();
+            if (!document.getElementById('cost-date').value) document.getElementById('cost-date').value = getTodayDateString();
+
+            // คำนวณ FIFO การตัดสต็อกกล่องอาหาร
+            calculateInventoryDepletion();
+
+            // แสดงรายการ Dropdown ในแท็บฟอร์ม
+            populateInputDropdowns();
+
+            // อัปเดตตารางหน้าตั้งค่า
+            renderSettingsTables();
+
+            // กรองประวัติในช่วงเวลาที่เลือก
+            const filteredSales = salesList.filter(item => checkDateInPeriod(item.date));
+            const filteredCosts = costsList.filter(item => checkDateInPeriod(item.date));
+
+            // 1. คำนวณยอดรายได้
+            let totalRevenue = 0;
+            let productSalesTotals = {};
+            productPresetsList.forEach(p => { productSalesTotals[p.name] = 0; });
+
+            filteredSales.forEach(item => {
+                const subTotal = item.price * item.sold;
+                totalRevenue += subTotal;
+                
+                if (productSalesTotals[item.name] !== undefined) {
+                    productSalesTotals[item.name] += subTotal;
+                } else {
+                    productSalesTotals[item.name] = subTotal;
+                }
+            });
+
+            // 2. คำนวณยอดต้นทุนรวมทั้งหมด
+            let totalCost = filteredCosts.reduce((sum, item) => sum + item.cost, 0);
+            const netProfit = totalRevenue - totalCost;
+            const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+            // แสดงผลการ์ดสรุป KPI
+            document.getElementById('kpi-revenue').innerText = '฿' + totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            document.getElementById('kpi-cost').innerText = '฿' + totalCost.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            document.getElementById('kpi-profit').innerText = (netProfit >= 0 ? '+' : '-') + '฿' + Math.abs(netProfit).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            document.getElementById('kpi-margin').innerText = profitMargin.toFixed(1) + '%';
+
+            const profitCardValue = document.getElementById('kpi-profit');
+            if (netProfit < 0) {
+                profitCardValue.className = "text-2xl sm:text-3xl font-bold text-red-600";
+            } else {
+                profitCardValue.className = "text-2xl sm:text-3xl font-bold text-emerald-600";
+            }
+
+            // แสดงตารางประวัติยอดขายและรายจ่ายรวม
+            renderSalesRecordListTable();
+            renderUnifiedCostsRecordListTable();
+
+            // ประเมินสภาพและการเตือนสต็อกบรรจุภัณฑ์
+            renderHealthBannerAndAlerts(netProfit, profitMargin, totalRevenue, totalCost);
+
+            // แสดงกราฟวิเคราะห์ข้อมูลเชิงลึก
+            renderCharts(filteredCosts, productSalesTotals);
+        }
+
+        function populateInputDropdowns() {
+            // 1. ตัวเลือกเมนูยอดขาย
+            const salesSelect = document.getElementById('sales-dropdown-select');
+            const cachedValue = salesSelect.value;
+            
+            if (productPresetsList.length === 0) {
+                salesSelect.innerHTML = `<option value="">-- ยังไม่มีเมนูของทอด กรุณาเพิ่มที่หน้าตั้งค่า --</option>`;
+            } else {
+                salesSelect.innerHTML = productPresetsList.map(p => `
+                    <option value="${p.name}">${p.name} (ราคาตั้งต้น ฿${p.defaultPrice})</option>
+                `).join('');
+            }
+            
+            if (cachedValue && productPresetsList.some(p => p.name === cachedValue)) {
+                salesSelect.value = cachedValue;
+            } else {
+                autoFillProductPrice();
+            }
+
+            // 2. ตัวเลือกหมวดหมู่รายจ่ายต้นทุน
+            const costSelect = document.getElementById('cost-dropdown-select');
+            const cachedCostVal = costSelect.value;
+            
+            if (costPresetsList.length === 0) {
+                costSelect.innerHTML = `<option value="">-- ยังไม่มีหมวดหมู่รายจ่าย กรุณาเพิ่มที่หน้าตั้งค่า --</option>`;
+            } else {
+                costSelect.innerHTML = costPresetsList.map(c => `
+                    <option value="${c.name}">${c.name}</option>
+                `).join('');
+            }
+
+            if (cachedCostVal && costPresetsList.some(c => c.name === cachedCostVal)) {
+                costSelect.value = cachedCostVal;
+            }
+
+            // 3. ป้อน Checkboxes ในส่วนการผูกเมนูของคลังบรรจุภัณฑ์
+            const checkboxContainer = document.getElementById('linked-products-checkboxes-container');
+            let checkboxesHTML = `
+                <label class="flex items-center gap-2 font-bold text-gray-700 pb-1 border-b mb-1">
+                    <input type="checkbox" value="all_menus" class="inv-link-checkbox rounded text-orange-500" onchange="toggleAllMenusCheckbox(this)">
+                    <span>📦 ใช้ร่วมกับทุกเมนูของทอด</span>
+                </label>
+            `;
+
+            checkboxesHTML += productPresetsList.map(p => `
+                <label class="flex items-center gap-2 pl-1">
+                    <input type="checkbox" value="${p.name}" class="inv-link-checkbox sub-menu-checkbox rounded text-amber-500">
+                    <span>เฉพาะเมนู: ${p.name}</span>
+                </label>
+            `).join('');
+
+            checkboxContainer.innerHTML = checkboxesHTML;
+        }
+
+        function toggleAllMenusCheckbox(master) {
+            const subCheckboxes = document.querySelectorAll('.sub-menu-checkbox');
+            subCheckboxes.forEach(cb => {
+                if (master.checked) {
+                    cb.checked = false;
+                    cb.disabled = true;
+                } else {
+                    cb.disabled = false;
+                }
+            });
+        }
+
+        function renderSettingsTables() {
+            // 1. เมนูของทอด
+            const prodTbody = document.getElementById('product-presets-tbody');
+            if (productPresetsList.length === 0) {
+                prodTbody.innerHTML = `<tr><td colspan="3" class="px-3 py-4 text-center text-gray-400 font-light">ยังไม่มีตัวเลือกเมนูในระบบ</td></tr>`;
+            } else {
+                prodTbody.innerHTML = productPresetsList.map(p => `
+                    <tr class="hover:bg-amber-50/10">
+                        <td class="px-3 py-2 font-medium text-gray-800">${p.name}</td>
+                        <td class="px-3 py-2 text-right font-mono text-orange-600 font-bold">฿${p.defaultPrice}</td>
+                        <td class="px-3 py-2 text-center flex justify-center gap-3">
+                            <button onclick="editProductPreset('${p.id}')" class="text-blue-500 hover:text-blue-700 font-bold p-1 cursor-pointer"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProductPreset('${p.id}')" class="text-red-500 hover:text-red-700 font-bold p-1 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // 2. หมวดหมู่รายจ่าย
+            const catTbody = document.getElementById('category-presets-tbody');
+            if (costPresetsList.length === 0) {
+                catTbody.innerHTML = `<tr><td colspan="2" class="px-3 py-4 text-center text-gray-400 font-light">ยังไม่มีตัวเลือกหมวดหมู่ต้นทุนในระบบ</td></tr>`;
+            } else {
+                catTbody.innerHTML = costPresetsList.map(c => `
+                    <tr class="hover:bg-red-50/10">
+                        <td class="px-3 py-2 font-medium text-gray-800">${c.name}</td>
+                        <td class="px-3 py-2 text-center flex justify-center gap-3">
+                            <button onclick="editCostCategoryPreset('${c.id}')" class="text-blue-500 hover:text-blue-700 font-bold p-1 cursor-pointer"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteCostCategoryPreset('${c.id}')" class="text-red-500 hover:text-red-700 font-bold p-1 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // แสดงตารางประวัติยอดขาย (แท็บ 2)
+        function renderSalesRecordListTable() {
+            const tbody = document.getElementById('sales-table-body');
+            document.getElementById('sales-count-badge').innerText = `${salesList.length} รายการ`;
+            
+            if (salesList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400 font-light">ยังไม่มีข้อมูลยอดขาย ลองเลือกวันที่และบันทึกข้อมูลด้านซ้ายได้เลย!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = salesList.map(item => {
+                const dateThaiStr = formatDateToThai(item.date);
+                const matchFilter = checkDateInPeriod(item.date);
+                const rowStyle = matchFilter ? 'bg-white hover:bg-amber-50/10' : 'bg-gray-50 text-gray-400';
+                
+                return `
+                    <tr class="${rowStyle} transition-all">
+                        <td class="px-4 py-3 font-mono text-xs">${dateThaiStr} ${!matchFilter ? ' <span class="text-[10px] bg-gray-200 px-1.5 py-0.5 rounded text-gray-500">อยู่นอกตัวกรอง</span>' : ''}</td>
+                        <td class="px-4 py-3 font-medium ${matchFilter ? 'text-gray-900' : 'text-gray-400'}">${item.name}</td>
+                        <td class="px-4 py-3 text-right font-mono">฿${item.price.toLocaleString()}</td>
+                        <td class="px-4 py-3 text-right font-mono">${item.sold.toLocaleString()}</td>
+                        <td class="px-4 py-3 text-right font-mono font-semibold ${matchFilter ? 'text-emerald-600' : 'text-gray-400'}">฿${(item.price * item.sold).toLocaleString()}</td>
+                        <td class="px-4 py-3 text-center">
+                            <button onclick="deleteSalesItem('${item.id}')" class="text-red-500 hover:text-red-700 p-1.5 rounded hover:bg-red-50 transition-colors cursor-pointer" title="ลบยอดขายนี้">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ตารางสรุปประวัติรายจ่ายรวม แบบแสดงสถานะบรรจุภัณฑ์ (แท็บ 3)
+        function renderUnifiedCostsRecordListTable() {
+            const tbody = document.getElementById('costs-table-body');
+            document.getElementById('costs-count-badge').innerText = `${costsList.length} รายการ`;
+
+            if (costsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400 font-light">ยังไม่มีประวัติบันทึกรายจ่ายใด ๆ ลองบันทึกข้อมูลด้านซ้ายได้เลยครับ!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = costsList.map(item => {
+                const dateThaiStr = formatDateToThai(item.date);
+                const matchFilter = checkDateInPeriod(item.date);
+                const rowStyle = matchFilter ? 'bg-white hover:bg-red-50/10' : 'bg-gray-50 text-gray-400';
+
+                // รายละเอียดคอลัมน์ข้อมูลสต็อก
+                let stockInfoHTML = `<span class="text-gray-400 font-light text-[11px]">- ไม่มีประวัติตัดสต็อก -</span>`;
+                if (item.isPackaging) {
+                    const remainingPercent = Math.max(0, Math.min(100, (item.remaining / item.qty) * 100));
+                    let progressColor = 'bg-emerald-500';
+                    if (remainingPercent <= 20) progressColor = 'bg-red-500 animate-pulse';
+                    else if (remainingPercent <= 50) progressColor = 'bg-yellow-500';
+
+                    let linkedBadges = item.linkedProducts.includes('all_menus') 
+                        ? `<span class="bg-purple-100 text-purple-800 text-[9px] font-semibold px-1.5 py-0.5 rounded-full">ใช้ทุกเมนู</span>`
+                        : item.linkedProducts.map(p => `<span class="bg-amber-100 text-amber-800 text-[9px] font-semibold px-1.5 py-0.5 rounded-full inline-block truncate max-w-[80px]" title="${p}">${p}</span>`).join(' ');
+
+                    stockInfoHTML = `
+                        <div class="flex flex-col gap-1 max-w-[150px] mx-auto text-left">
+                            <div class="flex justify-between items-center text-[10px] font-semibold">
+                                <span class="text-orange-600">(เฉลี่ย ฿${item.unitCost.toFixed(2)}/ใบ)</span>
+                                <span class="${item.remaining <= 5 ? 'text-red-500 animate-pulse font-bold' : 'text-emerald-600'}">${item.remaining} / ${item.qty} ใบ</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1 overflow-hidden">
+                                <div class="${progressColor} h-1 rounded-full" style="width: ${remainingPercent}%"></div>
+                            </div>
+                            <div class="flex flex-wrap gap-1 mt-0.5">${linkedBadges}</div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <tr class="${rowStyle} transition-all">
+                        <td class="px-3 py-3 font-mono text-xs">${dateThaiStr} ${!matchFilter ? ' <span class="text-[9px] bg-gray-200 px-1 rounded text-gray-500">อยู่นอกตัวกรอง</span>' : ''}</td>
+                        <td class="px-3 py-3">
+                            <div class="font-medium ${matchFilter ? 'text-gray-900' : 'text-gray-400'}">${item.name}</div>
+                            ${item.isPackaging ? '<span class="text-[9px] text-orange-500 font-bold"><i class="fa-solid fa-box-open mr-1"></i>พัสดุกล่องอาหาร</span>' : ''}
+                        </td>
+                        <td class="px-3 py-3">
+                            <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-orange-100 text-orange-800">${item.category}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            ${stockInfoHTML}
+                        </td>
+                        <td class="px-3 py-3 text-right font-mono font-semibold ${matchFilter ? 'text-red-500' : 'text-gray-400'}">
+                            ฿${item.cost.toLocaleString()}
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <button onclick="deleteCostItem('${item.id}')" class="text-red-500 hover:text-red-700 p-1.5 rounded hover:bg-red-50 transition-colors cursor-pointer" title="ลบต้นทุนนี้">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Helper: เปลี่ยนวันที่คริสต์ศักราชเป็น พ.ศ.
+        function formatDateToThai(dateStr) {
+            if (!dateStr) return "-";
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const year = parseInt(parts[0]) + 543;
+            const month = parts[1];
+            const day = parts[2];
+            return `${day}/${month}/${String(year).substring(2)}`;
+        }
+
+        // ประเมินผลสุขภาพธุรกิจและแจ้งเตือนพัสดุกล่องอาหารใกล้หมด
+        function renderHealthBannerAndAlerts(netProfit, profitMargin, totalRevenue, totalCost) {
+            const banner = document.getElementById('health-banner');
+            let periodLabel = "ทั้งหมด";
+            if (activePeriodFilter === 'today') periodLabel = "วันนี้";
+            if (activePeriodFilter === 'week') periodLabel = "สัปดาห์นี้";
+            if (activePeriodFilter === 'month') periodLabel = "เดือนนี้";
+            if (activePeriodFilter === 'year') periodLabel = "ปีนี้";
+            if (activePeriodFilter === 'all') periodLabel = "ทั้งหมดตั้งแต่เริ่มต้นบันทึกข้อมูล";
+
+            // กรองหาพัสดุกล่องบรรจุภัณฑ์ที่เหลือน้อยกว่าหรือเท่ากับ 5 ใบ
+            const lowStockItems = costsList.filter(item => item.isPackaging && item.remaining <= 5);
+            const alertPanel = document.getElementById('low-inventory-alerts');
+            const alertContainer = document.getElementById('alert-items-container');
+
+            if (lowStockItems.length > 0) {
+                alertPanel.classList.remove('hidden');
+                alertContainer.innerHTML = lowStockItems.map(item => `
+                    <div class="bg-white p-3 rounded-lg border border-red-200 shadow-sm flex justify-between items-center gap-2">
+                        <span class="font-medium text-gray-700 truncate">📦 ${item.name}</span>
+                        <span class="font-bold font-mono text-red-600 bg-red-50 px-2.5 py-1 rounded shrink-0">คงเหลือเพียง ${item.remaining} ใบ!</span>
+                    </div>
+                `).join('');
+            } else {
+                alertPanel.classList.add('hidden');
+            }
+
+            if (totalRevenue === 0 && totalCost === 0) {
+                banner.className = "p-5 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 shadow-sm bg-gray-100 border-gray-200 text-gray-700";
+                banner.innerHTML = `
+                    <div class="text-3xl">📝</div>
+                    <div class="text-center sm:text-left flex-1">
+                        <h4 class="font-title font-bold text-base">ไม่พบข้อมูลรายได้และรายจ่ายในช่วงเวลา: ${periodLabel}</h4>
+                        <p class="text-xs text-gray-500 mt-1">กรุณากดที่แท็บ "จัดการยอดขาย" และ "จัดการต้นทุน & บรรจุภัณฑ์" เพื่อบันทึกข้อมูลลงระบบครับ</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (netProfit <= 0) {
+                banner.className = "p-5 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 shadow-sm bg-red-100 border-red-200 text-red-800";
+                banner.innerHTML = `
+                    <div class="text-3xl">🚨</div>
+                    <div class="text-center sm:text-left flex-1">
+                        <h4 class="font-title font-bold text-base">สถานะผลการดำเนินงาน [${periodLabel}]: ร้านของทอดติดลบหรือขาดทุนอยู่!</h4>
+                        <p class="text-xs text-red-700 mt-1">
+                            ยอดต้นทุนรวมที่ใช้จ่ายไป (฿${totalCost.toLocaleString()}) สูงกว่ายอดขายรวมที่ได้รับเข้ามา (฿${totalRevenue.toLocaleString()}) 
+                            <strong>คำแนะนำเชิงการตลาด:</strong> วิเคราะห์หาต้นทุนที่ลดได้ เช่น ซื้อวัตถุดิยกลัง และพิจารณาปรับขึ้นราคาขาย 3-5 บาท หรือจัดชุด Combo พ่วงน้ำสมุนไพร เพื่อดันยอดซื้อเฉลี่ยขึ้นครับ
+                        </p>
+                    </div>
+                `;
+            } else if (profitMargin < 30) {
+                banner.className = "p-5 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 shadow-sm bg-yellow-100 border-yellow-200 text-yellow-800";
+                banner.innerHTML = `
+                    <div class="text-3xl">⚠️</div>
+                    <div class="text-center sm:text-left flex-1">
+                        <h4 class="font-title font-bold text-base">สถานะผลการดำเนินงาน [${periodLabel}]: ร้านของทอดมีกำไร แต่สัดส่วนยังคงบางอยู่!</h4>
+                        <p class="text-xs text-yellow-700 mt-1">
+                            อัตรากำไรของคุณอยู่ที่ ${profitMargin.toFixed(1)}% (สำหรับอาหารทอด ควรมีอัตรากำไร 40-50% ขึ้นไปเพื่อสำรองค่าพลังงานทอดและน้ำมันระเหย) 
+                            <strong>คำแนะนำเชิงการตลาด:</strong> นำเสนอโปรโมชั่น Upsell เช่น ชวนโรยผงชีส/ต้มยำพิเศษ (+5 บาท) ซึ่งต้นทุนต่ำมากแต่ช่วยขยาย Margin สุทธิได้มหาศาลครับ
+                        </p>
+                    </div>
+                `;
+            } else {
+                banner.className = "p-5 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 shadow-sm bg-emerald-100 border-emerald-200 text-emerald-800";
+                banner.innerHTML = `
+                    <div class="text-3xl">🚀</div>
+                    <div class="text-center sm:text-left flex-1">
+                        <h4 class="font-title font-bold text-base">สถานะผลการดำเนินงาน [${periodLabel}]: สุขภาพการเงินแข็งแรงมาก กำไรโดดเด่นเยี่ยมยอด!</h4>
+                        <p class="text-xs text-emerald-700 mt-1">
+                            อัตรากำไรเฉลี่ยของคุณสูงถึง ${profitMargin.toFixed(1)}% สะท้อนถึงการคุมต้นทุนที่ยอดเยี่ยมและยอดขายที่มั่นคง 
+                            <strong>คำแนะนำเชิงการตลาด:</strong> สเกลร้านต่อได้เต็มตัว! ทำโปรโมตลงกลุ่มอาหารย่านชุมชนเพื่อขยายตลาด หรือเปิดตัวเมนูทอดชูโรงใหม่ๆ เพื่อดึงดูดลูกค้าหน้าใหม่ได้ทันทีครับ
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // --- GRAPH COMPILERS ---
+        function renderCharts(filteredCosts, productSalesTotals) {
+            // 1. Doughnut Chart สัดส่วนรายจ่าย
+            if (costChart) costChart.destroy();
+            const costCtx = document.getElementById('costBreakdownChart').getContext('2d');
+            
+            let categoryCostsMap = {};
+            costPresetsList.forEach(c => { categoryCostsMap[c.name] = 0; });
+
+            // จำแนกประเภทต้นทุนจากข้อมูลรายจ่าย (รวมทั้งแบบทั่วไปและบรรจุภัณฑ์)
+            filteredCosts.forEach(item => {
+                if (categoryCostsMap[item.category] !== undefined) {
+                    categoryCostsMap[item.category] += item.cost;
+                } else {
+                    categoryCostsMap[item.category] = item.cost;
+                }
+            });
+
+            const costLabels = Object.keys(categoryCostsMap).filter(k => categoryCostsMap[k] > 0);
+            const costValues = costLabels.map(k => categoryCostsMap[k]);
+            const totalSumCosts = costValues.reduce((a, b) => a + b, 0);
+
+            const costBgColors = ['#f59e0b', '#ef4444', '#fbbf24', '#a855f7', '#6366f1', '#06b6d4', '#10b981'];
+
+            costChart = new Chart(costCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: costLabels.length > 0 ? costLabels : ['ไม่มีข้อมูลต้นทุนในช่วงเวลานี้'],
+                    datasets: [{
+                        data: totalSumCosts > 0 ? costValues : [1],
+                        backgroundColor: totalSumCosts > 0 ? costBgColors.slice(0, costLabels.length) : ['#e5e7eb'],
+                        borderWidth: 1,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (totalSumCosts === 0) return 'ไม่มีข้อมูล';
+                                    const val = context.raw || 0;
+                                    const pct = ((val / totalSumCosts) * 100).toFixed(1);
+                                    return ` ฿${val.toLocaleString()} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Bar Chart ยอดรวมรายได้ยอดขายแต่ละรายการ
+            if (salesChart) salesChart.destroy();
+            const salesCtx = document.getElementById('productSalesChart').getContext('2d');
+
+            const salesLabels = Object.keys(productSalesTotals);
+            const salesValues = Object.values(productSalesTotals);
+
+            salesChart = new Chart(salesCtx, {
+                type: 'bar',
+                data: {
+                    labels: salesLabels.length > 0 ? salesLabels : ['ไม่มีข้อมูลยอดขายในช่วงนี้'],
+                    datasets: [{
+                        label: 'ยอดขายสะสม (บาท)',
+                        data: salesValues.length > 0 ? salesValues : [0],
+                        backgroundColor: '#f97316',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // ดันระบบให้ทำงานเมื่อเริ่มเข้าหน้าเว็บ
+        window.onload = function() {
+            calculateAndUpdateUI();
+        };
+    </script>
+</body>
+</html>
