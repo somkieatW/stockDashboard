@@ -14,6 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: 'Sarabun', sans-serif;
@@ -25,410 +27,447 @@
 </head>
 <body class="bg-amber-50/30 text-gray-800 min-h-screen">
 
-    <!-- Top Navigation Bar -->
-    <nav class="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-3">
-                    <span class="text-2xl">🍗</span>
-                    <span class="font-title text-xl font-bold tracking-wide">ระบบบริหารร้านของทอด & คำนวณต้นทุนกล่องอัจฉริยะ</span>
-                </div>
-                <div class="text-sm bg-orange-700/50 px-3 py-1 rounded-full border border-orange-400/30 hidden sm:block">
-                    <i class="fa-solid fa-calculator mr-1"></i> คำนวณสต็อก & ต้นทุนเฉลี่ยรายจ่ายแบบรวมศูนย์
-                </div>
+    <!-- Beautiful Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 bg-amber-50/80 backdrop-blur-md z-[9999] flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl border border-amber-100 max-w-md w-full mx-4 space-y-6">
+            <div class="text-center">
+                <span class="text-5xl">🍗</span>
+                <h2 class="font-title text-2xl font-bold text-gray-800 mt-2">ระบบบริหารร้านของทอด</h2>
+                <p class="text-sm text-gray-500 mt-1">กรุณากรอก Email และ Password เพื่อเข้าใช้ระบบ</p>
             </div>
-        </div>
-    </nav>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <!-- Tab Navigation Buttons (4 แท็บหลักอย่างเป็นระเบียบ) -->
-        <div class="bg-white rounded-xl shadow-sm p-2 border border-amber-100 mb-8 flex flex-wrap gap-2">
-            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-orange-500 text-white shadow-sm">
-                <i class="fa-solid fa-chart-pie text-lg"></i> แดชบอร์ดภาพรวม
-            </button>
-            <button onclick="switchTab('sales')" id="btn-sales" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
-                <i class="fa-solid fa-receipt text-lg"></i> จัดการยอดขาย
-            </button>
-            <button onclick="switchTab('costs')" id="btn-costs" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
-                <i class="fa-solid fa-wallet text-lg"></i> จัดการต้นทุน & บรรจุภัณฑ์
-            </button>
-            <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
-                <i class="fa-solid fa-sliders text-lg"></i> ⚙️ ตั้งค่าตัวเลือกเมนู
-            </button>
-        </div>
-
-        <!-- ================= TAB 1: DASHBOARD ================= -->
-        <div id="tab-dashboard" class="tab-content block space-y-8">
             
-            <!-- Time Frame Selector Panel -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                    <span class="text-xl">📅</span>
-                    <span class="font-title font-bold text-gray-700 text-lg">เลือกช่วงเวลาเพื่อวิเคราะห์ผลงานร้าน:</span>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Email</label>
+                    <input type="email" id="login-email" placeholder="owner@friedfood.com" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
                 </div>
-                <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                    <button onclick="changeTimePeriod('all')" id="period-all" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-orange-500 text-white shadow-sm">
-                        ดูทั้งหมด
-                    </button>
-                    <button onclick="changeTimePeriod('today')" id="period-today" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
-                        รายวัน (วันนี้)
-                    </button>
-                    <button onclick="changeTimePeriod('week')" id="period-week" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
-                        รายสัปดาห์ (สัปดาห์นี้)
-                    </button>
-                    <button onclick="changeTimePeriod('month')" id="period-month" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
-                        รายเดือน (เดือนนี้)
-                    </button>
-                    <button onclick="changeTimePeriod('year')" id="period-year" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
-                        รายปี (ปีนี้)
-                    </button>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
                 </div>
-            </div>
-
-            <!-- Summary KPI Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Card 1: Total Revenue -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">ยอดขายรวมในช่วง</p>
-                        <h3 id="kpi-revenue" class="text-2xl sm:text-3xl font-bold text-emerald-600">฿0</h3>
-                    </div>
-                    <div class="bg-emerald-50 text-emerald-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-money-bill-trend-up"></i></div>
-                </div>
-                <!-- Card 2: Total Cost -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-red-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">ต้นทุนรวมทั้งหมด</p>
-                        <h3 id="kpi-cost" class="text-2xl sm:text-3xl font-bold text-red-500">฿0</h3>
-                    </div>
-                    <div class="bg-red-50 text-red-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-receipt"></i></div>
-                </div>
-                <!-- Card 3: Net Profit -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">กำไรสุทธิในช่วง</p>
-                        <h3 id="kpi-profit" class="text-2xl sm:text-3xl font-bold text-blue-600">฿0</h3>
-                    </div>
-                    <div class="bg-blue-50 text-blue-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-piggy-bank"></i></div>
-                </div>
-                <!-- Card 4: Profit Margin -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-purple-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">อัตรากำไรเฉลี่ย (Margin)</p>
-                        <h3 id="kpi-margin" class="text-2xl sm:text-3xl font-bold text-purple-600">0%</h3>
-                    </div>
-                    <div class="bg-purple-50 text-purple-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-percent"></i></div>
-                </div>
-            </div>
-
-            <!-- Health Status Notification Banner -->
-            <div id="health-banner" class="p-5 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 shadow-sm">
-                <!-- Dynamic Content via JS -->
-            </div>
-
-            <!-- Inventory Low Alerts Panel -->
-            <div id="low-inventory-alerts" class="hidden bg-red-50 border border-red-200 p-5 rounded-2xl space-y-3 shadow-sm">
-                <div class="flex items-center gap-2 text-red-800 font-bold font-title">
-                    <span class="text-xl">⚠️</span>
-                    <span>แจ้งเตือนด่วน: บรรจุภัณฑ์ใกล้หมดคลัง! (กรุณาสั่งซื้อหรือบันทึกเพิ่มสต็อกเข้าระบบ)</span>
-                </div>
-                <div id="alert-items-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-red-700">
-                    <!-- Dynamic Warnings -->
-                </div>
-            </div>
-
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Cost Breakdown Chart -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
-                    <h3 class="text-lg font-title font-semibold text-gray-700 mb-4"><i class="fa-solid fa-chart-pie text-amber-500 mr-2"></i>สัดส่วนต้นทุนรวมสะสม</h3>
-                    <div class="relative w-full h-[280px] flex items-center justify-center">
-                        <canvas id="costBreakdownChart"></canvas>
-                    </div>
-                </div>
-                <!-- Product Sales Bar Chart -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
-                    <h3 class="text-lg font-title font-semibold text-gray-700 mb-4"><i class="fa-solid fa-chart-column text-amber-500 mr-2"></i>ยอดรวมรายได้ของทอดแต่ละเมนู</h3>
-                    <div class="relative w-full h-[280px] flex items-center justify-center">
-                        <canvas id="productSalesChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= TAB 2: SALES MANAGER ================= -->
-        <div id="tab-sales" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Add New Product Form -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 h-fit space-y-4">
-                    <h3 class="text-lg font-title font-semibold text-gray-700 border-b pb-2"><i class="fa-solid fa-plus-circle text-orange-500 mr-2"></i>บันทึกยอดขายรายวัน</h3>
-                    
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">วันที่ทำรายการ</label>
-                        <input type="date" id="sales-date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
-                    </div>
-                    
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">เลือกเมนูของทอด</label>
-                            <span onclick="switchTab('settings')" class="text-xs text-orange-500 hover:underline cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> ตั้งค่า/แก้ไขชื่อรายการ</span>
-                        </div>
-                        <select id="sales-dropdown-select" onchange="autoFillProductPrice()" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white">
-                            <!-- Populated dynamically via JS -->
-                        </select>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ราคาต่อชุด (บาท)</label>
-                            <input type="number" id="sales-price" placeholder="40" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">จำนวนที่ขายได้ (ชุด)</label>
-                            <input type="number" id="sales-qty" placeholder="100" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
-                        </div>
-                    </div>
-                    <button onclick="addSalesItem()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-title font-medium py-3 rounded-lg transition-colors cursor-pointer text-center block shadow-sm">
-                        <i class="fa-solid fa-save mr-1"></i> บันทึกรายการยอดขาย
-                    </button>
-                </div>
-
-                <!-- Sales Records Table -->
-                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <h3 class="text-lg font-title font-semibold text-gray-700"><i class="fa-solid fa-list-check text-orange-500 mr-2"></i>ประวัติการขายทั้งหมด</h3>
-                            <span class="text-xs bg-orange-100 text-orange-800 font-semibold px-2.5 py-1 rounded-full" id="sales-count-badge">0 รายการ</span>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i> เมื่อระบุจำนวนชุดขายที่นี่ ระบบจะหักลบจำนวนบรรจุภัณฑ์/กล่องอาหารที่ผูกไว้ให้ทันทีโดยอัตโนมัติ</p>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm text-left">
-                                <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-semibold">
-                                    <tr>
-                                        <th class="px-4 py-3">วันที่</th>
-                                        <th class="px-4 py-3">ชื่อเมนู</th>
-                                        <th class="px-4 py-3 text-right">ราคา/ชุด</th>
-                                        <th class="px-4 py-3 text-right">จำนวนที่ขาย</th>
-                                        <th class="px-4 py-3 text-right">รวมรายได้</th>
-                                        <th class="px-4 py-3 text-center">จัดการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sales-table-body" class="divide-y divide-gray-100 text-gray-700">
-                                    <!-- Dynamic rows via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= TAB 3: CONSOLIDATED COST MANAGER (รวมต้นทุนและบรรจุภัณฑ์) ================= -->
-        <div id="tab-costs" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                <!-- บูรณาการ Form: บันทึกต้นทุน/รายจ่าย & บรรจุภัณฑ์ชิ้นเดียวจบ -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 h-fit space-y-4">
-                    <h3 class="text-lg font-title font-semibold text-red-500 border-b pb-2 flex items-center gap-2">
-                        <i class="fa-solid fa-wallet text-red-500"></i>
-                        <span>บันทึกต้นทุนรายจ่าย & บรรจุภัณฑ์</span>
-                    </h3>
-                    
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">วันที่ทำรายการ</label>
-                        <input type="date" id="cost-date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
-                    </div>
+                <button onclick="handleLogin()" id="btn-login" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-title font-medium py-3 rounded-xl transition-all cursor-pointer text-center block shadow-md">
+                    <i class="fa-solid fa-right-to-bracket mr-1"></i> เข้าสู่ระบบ
+                </button>
+            </div>
+        </div>
+    </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">รายละเอียดรายจ่าย / ชื่อวัสดุ</label>
-                        <input type="text" id="cost-name" placeholder="เช่น ค่าเนื้อสะโพกไก่ 10กก., กล่องใส่อาหาร" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white">
+    <!-- Main App Container (Hidden by default until logged in) -->
+    <div id="app-container" class="hidden">
+        <!-- Top Navigation Bar -->
+        <nav class="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl">🍗</span>
+                        <span class="font-title text-xl font-bold tracking-wide">ระบบบริหารร้านของทอด & คำนวณต้นทุนกล่องอัจฉริยะ</span>
                     </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm bg-orange-700/50 px-3 py-1 rounded-full border border-orange-400/30 hidden md:block">
+                            <i class="fa-solid fa-calculator mr-1"></i> คำนวณสต็อก & ต้นทุนเฉลี่ยรายจ่ายแบบรวมศูนย์
+                        </div>
+                        <button onclick="handleLogout()" id="btn-logout" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
 
-                    <div class="grid grid-cols-2 gap-3">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Tab Navigation Buttons (4 แท็บหลักอย่างเป็นระเบียบ) -->
+            <div class="bg-white rounded-xl shadow-sm p-2 border border-amber-100 mb-8 flex flex-wrap gap-2">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-orange-500 text-white shadow-sm">
+                    <i class="fa-solid fa-chart-pie text-lg"></i> แดชบอร์ดภาพรวม
+                </button>
+                <button onclick="switchTab('sales')" id="btn-sales" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-receipt text-lg"></i> จัดการยอดขาย
+                </button>
+                <button onclick="switchTab('costs')" id="btn-costs" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-wallet text-lg"></i> จัดการต้นทุน & บรรจุภัณฑ์
+                </button>
+                <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn flex-1 min-w-[120px] py-3 px-4 rounded-lg font-title font-medium text-center transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 bg-gray-50 text-gray-600 hover:bg-gray-100">
+                    <i class="fa-solid fa-sliders text-lg"></i> ⚙️ ตั้งค่าตัวเลือกเมนู
+                </button>
+            </div>
+
+            <!-- ================= TAB 1: DASHBOARD ================= -->
+            <div id="tab-dashboard" class="tab-content block space-y-8">
+                
+                <!-- Time Frame Selector Panel -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">📅</span>
+                        <span class="font-title font-bold text-gray-700 text-lg">เลือกช่วงเวลาเพื่อวิเคราะห์ผลงานร้าน:</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                        <button onclick="changeTimePeriod('all')" id="period-all" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-orange-500 text-white shadow-sm">
+                            ดูทั้งหมด
+                        </button>
+                        <button onclick="changeTimePeriod('today')" id="period-today" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            รายวัน (วันนี้)
+                        </button>
+                        <button onclick="changeTimePeriod('week')" id="period-week" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            รายสัปดาห์ (สัปดาห์นี้)
+                        </button>
+                        <button onclick="changeTimePeriod('month')" id="period-month" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            รายเดือน (เดือนนี้)
+                        </button>
+                        <button onclick="changeTimePeriod('year')" id="period-year" class="period-btn flex-1 md:flex-initial py-2 px-4 rounded-lg text-sm font-medium transition-all duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            รายปี (ปีนี้)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Card 1: Total Revenue -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">ยอดขายรวมในช่วง</p>
+                            <h3 id="kpi-revenue" class="text-2xl sm:text-3xl font-bold text-emerald-600">฿0</h3>
+                        </div>
+                        <div class="bg-emerald-50 text-emerald-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                    </div>
+                    <!-- Card 2: Total Cost -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-red-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">ต้นทุนรวมทั้งหมด</p>
+                            <h3 id="kpi-cost" class="text-2xl sm:text-3xl font-bold text-red-500">฿0</h3>
+                        </div>
+                        <div class="bg-red-50 text-red-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-receipt"></i></div>
+                    </div>
+                    <!-- Card 3: Net Profit -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">กำไรสุทธิในช่วง</p>
+                            <h3 id="kpi-profit" class="text-2xl sm:text-3xl font-bold text-blue-600">฿0</h3>
+                        </div>
+                        <div class="bg-blue-50 text-blue-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-piggy-bank"></i></div>
+                    </div>
+                    <!-- Card 4: Profit Margin -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-purple-100 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">อัตรากำไรเฉลี่ย (Margin)</p>
+                            <h3 id="kpi-margin" class="text-2xl sm:text-3xl font-bold text-purple-600">0%</h3>
+                        </div>
+                        <div class="bg-purple-50 text-purple-500 p-4 rounded-xl text-xl"><i class="fa-solid fa-percent"></i></div>
+                    </div>
+                </div>
+
+                <!-- Health Status Notification Banner -->
+                <div id="health-banner" class="p-5 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 shadow-sm">
+                    <!-- Dynamic Content via JS -->
+                </div>
+
+                <!-- Inventory Low Alerts Panel -->
+                <div id="low-inventory-alerts" class="hidden bg-red-50 border border-red-200 p-5 rounded-2xl space-y-3 shadow-sm">
+                    <div class="flex items-center gap-2 text-red-800 font-bold font-title">
+                        <span class="text-xl">⚠️</span>
+                        <span>แจ้งเตือนด่วน: บรรจุภัณฑ์ใกล้หมดคลัง! (กรุณาสั่งซื้อหรือบันทึกเพิ่มสต็อกเข้าระบบ)</span>
+                    </div>
+                    <div id="alert-items-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-red-700">
+                        <!-- Dynamic Warnings -->
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Cost Breakdown Chart -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                        <h3 class="text-lg font-title font-semibold text-gray-700 mb-4"><i class="fa-solid fa-chart-pie text-amber-500 mr-2"></i>สัดส่วนต้นทุนรวมสะสม</h3>
+                        <div class="relative w-full h-[280px] flex items-center justify-center">
+                            <canvas id="costBreakdownChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Product Sales Bar Chart -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                        <h3 class="text-lg font-title font-semibold text-gray-700 mb-4"><i class="fa-solid fa-chart-column text-amber-500 mr-2"></i>ยอดรวมรายได้ของทอดแต่ละเมนู</h3>
+                        <div class="relative w-full h-[280px] flex items-center justify-center">
+                            <canvas id="productSalesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 2: SALES MANAGER ================= -->
+            <div id="tab-sales" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Add New Product Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 h-fit space-y-4">
+                        <h3 class="text-lg font-title font-semibold text-gray-700 border-b pb-2"><i class="fa-solid fa-plus-circle text-orange-500 mr-2"></i>บันทึกยอดขายรายวัน</h3>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">วันที่ทำรายการ</label>
+                            <input type="date" id="sales-date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
+                        </div>
+                        
                         <div>
                             <div class="flex justify-between items-center mb-1">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">ประเภทต้นทุน</label>
-                                <span onclick="switchTab('settings')" class="text-xs text-red-500 hover:underline cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> ตั้งค่าตัวเลือก</span>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">เลือกเมนูของทอด</label>
+                                <span onclick="switchTab('settings')" class="text-xs text-orange-500 hover:underline cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> ตั้งค่า/แก้ไขชื่อรายการ</span>
                             </div>
-                            <select id="cost-dropdown-select" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white">
-                                <!-- Populated dynamically -->
+                            <select id="sales-dropdown-select" onchange="autoFillProductPrice()" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white">
+                                <!-- Populated dynamically via JS -->
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">จำนวนเงินรวม (บาท)</label>
-                            <input type="number" id="cost-amount" oninput="calcUnifiedUnitCost()" placeholder="150" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">ราคาต่อชุด (บาท)</label>
+                                <input type="number" id="sales-price" placeholder="40" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">จำนวนที่ขายได้ (ชุด)</label>
+                                <input type="number" id="sales-qty" placeholder="100" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm">
+                            </div>
                         </div>
+                        <button onclick="addSalesItem()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-title font-medium py-3 rounded-lg transition-colors cursor-pointer text-center block shadow-sm">
+                            <i class="fa-solid fa-save mr-1"></i> บันทึกรายการยอดขาย
+                        </button>
                     </div>
 
-                    <!-- Toggle บรรจุภัณฑ์ -->
-                    <div class="bg-amber-50/50 p-3 rounded-lg border border-amber-200">
-                        <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800">
-                            <input type="checkbox" id="cost-is-packaging" onchange="togglePackagingFields()" class="rounded text-amber-500 focus:ring-amber-500">
-                            <span>📦 รายการนี้คือบรรจุภัณฑ์ (นับสต็อก / คำนวณราคาเฉลี่ย)</span>
-                        </label>
-                    </div>
-
-                    <!-- ฟิลด์ขยายพิเศษสำหรับกล่องบรรจุภัณฑ์ (จะแสดงผลเมื่อติ๊กเลือกด้านบนเท่านั้น) -->
-                    <div id="packaging-fields-wrapper" class="hidden bg-amber-50/20 border border-amber-100 p-4 rounded-xl space-y-3 transition-all duration-300">
-                        <div>
-                            <label class="block text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">จำนวนบรรจุภัณฑ์ที่ได้รับ (ใบ/ชิ้น)</label>
-                            <input type="number" id="cost-qty" oninput="calcUnifiedUnitCost()" placeholder="30" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white">
-                        </div>
-
-                        <!-- คำนวณราคาต่อหน่วยเฉลี่ยใบละกี่บาทให้ทันที -->
-                        <div class="p-2.5 bg-white border border-amber-200 rounded-lg flex justify-between text-xs items-center">
-                            <span class="text-gray-500 font-semibold">ต้นทุนเฉลี่ย:</span>
-                            <span id="cost-unit-cost-feedback" class="font-bold text-orange-600">฿0.00 / ใบ</span>
-                        </div>
-
-                        <!-- เลือกสินค้าที่ต้องการผูกยอดขายเพื่อหักสต็อกบรรจุภัณฑ์อัตโนมัติ (เลือกได้มากกว่า 1 เมนู) -->
-                        <div>
-                            <label class="block text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">ผูกเมนูของทอดที่ใช้บรรจุภัณฑ์นี้ (เลือกได้มากกว่า 1 รายการ)</label>
-                            <div class="border border-gray-200 rounded-lg p-3 bg-white max-h-36 overflow-y-auto space-y-2 text-xs" id="linked-products-checkboxes-container">
-                                <!-- Dynamic checkboxes from JS -->
+                    <!-- Sales Records Table -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b pb-2">
+                                <h3 class="text-lg font-title font-semibold text-gray-700"><i class="fa-solid fa-list-check text-orange-500 mr-2"></i>ประวัติการขายทั้งหมด</h3>
+                                <span class="text-xs bg-orange-100 text-orange-800 font-semibold px-2.5 py-1 rounded-full" id="sales-count-badge">0 รายการ</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-circle-info mr-1"></i> เมื่อระบุจำนวนชุดขายที่นี่ ระบบจะหักลบจำนวนบรรจุภัณฑ์/กล่องอาหารที่ผูกไว้ให้ทันทีโดยอัตโนมัติ</p>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-sm text-left">
+                                    <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-semibold">
+                                        <tr>
+                                            <th class="px-4 py-3">วันที่</th>
+                                            <th class="px-4 py-3">ชื่อเมนู</th>
+                                            <th class="px-4 py-3 text-right">ราคา/ชุด</th>
+                                            <th class="px-4 py-3 text-right">จำนวนที่ขาย</th>
+                                            <th class="px-4 py-3 text-right">รวมรายได้</th>
+                                            <th class="px-4 py-3 text-center">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sales-table-body" class="divide-y divide-gray-100 text-gray-700">
+                                        <!-- Dynamic rows via JS -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-
-                    <button onclick="addUnifiedCostItem()" class="w-full bg-red-500 hover:bg-red-600 text-white font-title font-medium py-3 rounded-lg transition-colors cursor-pointer text-center block shadow-sm">
-                        <i class="fa-solid fa-save mr-1"></i> บันทึกข้อมูลต้นทุน
-                    </button>
                 </div>
+            </div>
 
-                <!-- ตารางบันทึกประวัติค่าใช้จ่ายแบบรวมบัญชีเดียว -->
-                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <h3 class="text-lg font-title font-semibold text-gray-700"><i class="fa-solid fa-list-ul text-red-500 mr-2"></i>ประวัติรายจ่าย & คลังบรรจุภัณฑ์สะสม</h3>
-                            <span class="text-xs bg-red-100 text-red-800 font-semibold px-2.5 py-1 rounded-full" id="costs-count-badge">0 รายการ</span>
+            <!-- ================= TAB 3: CONSOLIDATED COST MANAGER (รวมต้นทุนและบรรจุภัณฑ์) ================= -->
+            <div id="tab-costs" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- บูรณาการ Form: บันทึกต้นทุน/รายจ่าย & บรรจุภัณฑ์ชิ้นเดียวจบ -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 h-fit space-y-4">
+                        <h3 class="text-lg font-title font-semibold text-red-500 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-wallet text-red-500"></i>
+                            <span>บันทึกต้นทุนรายจ่าย & บรรจุภัณฑ์</span>
+                        </h3>
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">วันที่ทำรายการ</label>
+                            <input type="date" id="cost-date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
                         </div>
-                        <p class="text-xs text-gray-400"><i class="fa-solid fa-circle-info mr-1"></i> รายการบัญชีด้านล่างจะรวมค่าใช้จ่ายทั่วไปและคลังบรรจุภัณฑ์ พร้อมสถานะการตัดจำนวนสต็อกอัตโนมัติ</p>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-xs text-left">
-                                <thead class="bg-gray-50 text-gray-500 uppercase font-semibold">
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">รายละเอียดรายจ่าย / ชื่อวัสดุ</label>
+                            <input type="text" id="cost-name" placeholder="เช่น ค่าเนื้อสะโพกไก่ 10กก., กล่องใส่อาหาร" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">ประเภทต้นทุน</label>
+                                    <span onclick="switchTab('settings')" class="text-xs text-red-500 hover:underline cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> ตั้งค่าตัวเลือก</span>
+                                </div>
+                                <select id="cost-dropdown-select" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm bg-white">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">จำนวนเงินรวม (บาท)</label>
+                                <input type="number" id="cost-amount" oninput="calcUnifiedUnitCost()" placeholder="150" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Toggle บรรจุภัณฑ์ -->
+                        <div class="bg-amber-50/50 p-3 rounded-lg border border-amber-200">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800">
+                                <input type="checkbox" id="cost-is-packaging" onchange="togglePackagingFields()" class="rounded text-amber-500 focus:ring-amber-500">
+                                <span>📦 รายการนี้คือบรรจุภัณฑ์ (นับสต็อก / คำนวณราคาเฉลี่ย)</span>
+                            </label>
+                        </div>
+
+                        <!-- ฟิลด์ขยายพิเศษสำหรับกล่องบรรจุภัณฑ์ (จะแสดงผลเมื่อติ๊กเลือกด้านบนเท่านั้น) -->
+                        <div id="packaging-fields-wrapper" class="hidden bg-amber-50/20 border border-amber-100 p-4 rounded-xl space-y-3 transition-all duration-300">
+                            <div>
+                                <label class="block text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">จำนวนบรรจุภัณฑ์ที่ได้รับ (ใบ/ชิ้น)</label>
+                                <input type="number" id="cost-qty" oninput="calcUnifiedUnitCost()" placeholder="30" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm bg-white">
+                            </div>
+
+                            <!-- คำนวณราคาต่อหน่วยเฉลี่ยใบละกี่บาทให้ทันที -->
+                            <div class="p-2.5 bg-white border border-amber-200 rounded-lg flex justify-between text-xs items-center">
+                                <span class="text-gray-500 font-semibold">ต้นทุนเฉลี่ย:</span>
+                                <span id="cost-unit-cost-feedback" class="font-bold text-orange-600">฿0.00 / ใบ</span>
+                            </div>
+
+                            <!-- เลือกสินค้าที่ต้องการผูกยอดขายเพื่อหักสต็อกบรรจุภัณฑ์อัตโนมัติ (เลือกได้มากกว่า 1 เมนู) -->
+                            <div>
+                                <label class="block text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">ผูกเมนูของทอดที่ใช้บรรจุภัณฑ์นี้ (เลือกได้มากกว่า 1 รายการ)</label>
+                                <div class="border border-gray-200 rounded-lg p-3 bg-white max-h-36 overflow-y-auto space-y-2 text-xs" id="linked-products-checkboxes-container">
+                                    <!-- Dynamic checkboxes from JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="addUnifiedCostItem()" class="w-full bg-red-500 hover:bg-red-600 text-white font-title font-medium py-3 rounded-lg transition-colors cursor-pointer text-center block shadow-sm">
+                            <i class="fa-solid fa-save mr-1"></i> บันทึกข้อมูลต้นทุน
+                        </button>
+                    </div>
+
+                    <!-- ตารางบันทึกประวัติค่าใช้จ่ายแบบรวมบัญชีเดียว -->
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-amber-100 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b pb-2">
+                                <h3 class="text-lg font-title font-semibold text-gray-700"><i class="fa-solid fa-list-ul text-red-500 mr-2"></i>ประวัติรายจ่าย & คลังบรรจุภัณฑ์สะสม</h3>
+                                <span class="text-xs bg-red-100 text-red-800 font-semibold px-2.5 py-1 rounded-full" id="costs-count-badge">0 รายการ</span>
+                            </div>
+                            <p class="text-xs text-gray-400"><i class="fa-solid fa-circle-info mr-1"></i> รายการบัญชีด้านล่างจะรวมค่าใช้จ่ายทั่วไปและคลังบรรจุภัณฑ์ พร้อมสถานะการตัดจำนวนสต็อกอัตโนมัติ</p>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full text-xs text-left">
+                                    <thead class="bg-gray-50 text-gray-500 uppercase font-semibold">
+                                        <tr>
+                                            <th class="px-3 py-3">วันที่</th>
+                                            <th class="px-3 py-3">รายละเอียดค่าใช้จ่าย</th>
+                                            <th class="px-3 py-3">ประเภทต้นทุน</th>
+                                            <th class="px-3 py-3 text-center">ข้อมูลสต็อก (ถ้ามี)</th>
+                                            <th class="px-3 py-3 text-right">จำนวนรวม (บาท)</th>
+                                            <th class="px-3 py-3 text-center">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="costs-table-body" class="divide-y divide-gray-100 text-gray-700">
+                                        <!-- Dynamic rows via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!-- ================= TAB 4: SETTINGS (EDITABLE DROPDOWNS) ================= -->
+            <div id="tab-settings" class="tab-content hidden space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- 1. PRODUCT PRESET MANAGER (SALES DROPDOWN EDITOR) -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 space-y-4">
+                        <h3 class="text-lg font-title font-semibold text-orange-600 border-b pb-2 flex justify-between items-center">
+                            <span><i class="fa-solid fa-utensils mr-2"></i>จัดการตัวเลือกเมนูของทอด (Dropdown)</span>
+                            <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded font-normal">แก้ไขตัวเลือกยอดขาย</span>
+                        </h3>
+                        
+                        <!-- Add/Edit form for Menu Preset -->
+                        <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-3">
+                            <p class="text-xs font-bold text-amber-800" id="product-form-title">➕ เพิ่มตัวเลือกเมนูใหม่</p>
+                            <input type="hidden" id="edit-prod-id" value="">
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">ชื่อเมนูของทอด</label>
+                                    <input type="text" id="preset-prod-name" placeholder="เช่น ไก่ป๊อปเขย่ารสแซ่บ" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">ราคาขายตั้งต้น (บาท/ชุด)</label>
+                                    <input type="number" id="preset-prod-price" placeholder="39" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none">
+                                </div>
+                            </div>
+                            <div class="flex gap-2 justify-end">
+                                <button onclick="cancelProductEdit()" id="btn-cancel-prod" class="hidden px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-semibold cursor-pointer">ยกเลิก</button>
+                                <button onclick="saveProductPreset()" class="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs font-semibold cursor-pointer">บันทึกตัวเลือกเมนู</button>
+                            </div>
+                        </div>
+
+                        <!-- List of current product presets -->
+                        <div class="overflow-y-auto max-h-[300px] border border-gray-100 rounded-lg">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-gray-100 text-gray-600 uppercase font-semibold">
                                     <tr>
-                                        <th class="px-3 py-3">วันที่</th>
-                                        <th class="px-3 py-3">รายละเอียดค่าใช้จ่าย</th>
-                                        <th class="px-3 py-3">ประเภทต้นทุน</th>
-                                        <th class="px-3 py-3 text-center">ข้อมูลสต็อก (ถ้ามี)</th>
-                                        <th class="px-3 py-3 text-right">จำนวนรวม (บาท)</th>
-                                        <th class="px-3 py-3 text-center">จัดการ</th>
+                                        <th class="px-3 py-2">ชื่อเมนูใน Dropdown</th>
+                                        <th class="px-3 py-2 text-right">ราคาเริ่มต้น</th>
+                                        <th class="px-3 py-2 text-center">จัดการตัวเลือก</th>
                                     </tr>
                                 </thead>
-                                <tbody id="costs-table-body" class="divide-y divide-gray-100 text-gray-700">
-                                    <!-- Dynamic rows via JS -->
+                                <tbody id="product-presets-tbody" class="divide-y divide-gray-100">
+                                    <!-- Populated dynamically -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                </div>
-                
-            </div>
-        </div>
 
-        <!-- ================= TAB 4: SETTINGS (EDITABLE DROPDOWNS) ================= -->
-        <div id="tab-settings" class="tab-content hidden space-y-8">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
-                <!-- 1. PRODUCT PRESET MANAGER (SALES DROPDOWN EDITOR) -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 space-y-4">
-                    <h3 class="text-lg font-title font-semibold text-orange-600 border-b pb-2 flex justify-between items-center">
-                        <span><i class="fa-solid fa-utensils mr-2"></i>จัดการตัวเลือกเมนูของทอด (Dropdown)</span>
-                        <span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded font-normal">แก้ไขตัวเลือกยอดขาย</span>
-                    </h3>
-                    
-                    <!-- Add/Edit form for Menu Preset -->
-                    <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-3">
-                        <p class="text-xs font-bold text-amber-800" id="product-form-title">➕ เพิ่มตัวเลือกเมนูใหม่</p>
-                        <input type="hidden" id="edit-prod-id" value="">
+                    <!-- 2. COST CATEGORIES MANAGER (COSTS DROPDOWN EDITOR) -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 space-y-4">
+                        <h3 class="text-lg font-title font-semibold text-red-600 border-b pb-2 flex justify-between items-center">
+                            <span><i class="fa-solid fa-tags mr-2"></i>จัดการหมวดหมู่รายจ่ายทั่วไป (Dropdown)</span>
+                            <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded font-normal">แก้ไขตัวเลือกรายจ่าย</span>
+                        </h3>
                         
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Add/Edit form for Cost Category Preset -->
+                        <div class="bg-red-50/30 p-4 rounded-xl border border-red-100 space-y-3">
+                            <p class="text-xs font-bold text-red-800" id="cost-form-title">➕ เพิ่มหมวดหมู่ต้นทุนใหม่</p>
+                            <input type="hidden" id="edit-cost-cat-id" value="">
+                            
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">ชื่อเมนูของทอด</label>
-                                <input type="text" id="preset-prod-name" placeholder="เช่น ไก่ป๊อปเขย่ารสแซ่บ" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none">
+                                <label class="block text-xs text-gray-500 mb-1">ชื่อหมวดหมู่ต้นทุน</label>
+                                <input type="text" id="preset-cat-name" placeholder="เช่น ค่าน้ำมันและพลังงานทอด" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
                             </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">ราคาขายตั้งต้น (บาท/ชุด)</label>
-                                <input type="number" id="preset-prod-price" placeholder="39" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none">
+                            <div class="flex gap-2 justify-end">
+                                <button onclick="cancelCategoryEdit()" id="btn-cancel-cat" class="hidden px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-semibold cursor-pointer">ยกเลิก</button>
+                                <button onclick="saveCostCategoryPreset()" class="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-semibold cursor-pointer">บันทึกตัวเลือกหมวดหมู่</button>
                             </div>
                         </div>
-                        <div class="flex gap-2 justify-end">
-                            <button onclick="cancelProductEdit()" id="btn-cancel-prod" class="hidden px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-semibold cursor-pointer">ยกเลิก</button>
-                            <button onclick="saveProductPreset()" class="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs font-semibold cursor-pointer">บันทึกตัวเลือกเมนู</button>
+
+                        <!-- List of current cost presets -->
+                        <div class="overflow-y-auto max-h-[300px] border border-gray-100 rounded-lg">
+                            <table class="w-full text-xs text-left">
+                                <thead class="bg-gray-100 text-gray-600 uppercase font-semibold">
+                                    <tr>
+                                        <th class="px-3 py-2">ชื่อหมวดหมู่ต้นทุนใน Dropdown</th>
+                                        <th class="px-3 py-2 text-center">จัดการตัวเลือก</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="category-presets-tbody" class="divide-y divide-gray-100">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
-                    <!-- List of current product presets -->
-                    <div class="overflow-y-auto max-h-[300px] border border-gray-100 rounded-lg">
-                        <table class="w-full text-xs text-left">
-                            <thead class="bg-gray-100 text-gray-600 uppercase font-semibold">
-                                <tr>
-                                    <th class="px-3 py-2">ชื่อเมนูใน Dropdown</th>
-                                    <th class="px-3 py-2 text-right">ราคาเริ่มต้น</th>
-                                    <th class="px-3 py-2 text-center">จัดการตัวเลือก</th>
-                                </tr>
-                            </thead>
-                            <tbody id="product-presets-tbody" class="divide-y divide-gray-100">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
-
-                <!-- 2. COST CATEGORIES MANAGER (COSTS DROPDOWN EDITOR) -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 space-y-4">
-                    <h3 class="text-lg font-title font-semibold text-red-600 border-b pb-2 flex justify-between items-center">
-                        <span><i class="fa-solid fa-tags mr-2"></i>จัดการหมวดหมู่รายจ่ายทั่วไป (Dropdown)</span>
-                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded font-normal">แก้ไขตัวเลือกรายจ่าย</span>
-                    </h3>
-                    
-                    <!-- Add/Edit form for Cost Category Preset -->
-                    <div class="bg-red-50/30 p-4 rounded-xl border border-red-100 space-y-3">
-                        <p class="text-xs font-bold text-red-800" id="cost-form-title">➕ เพิ่มหมวดหมู่ต้นทุนใหม่</p>
-                        <input type="hidden" id="edit-cost-cat-id" value="">
-                        
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">ชื่อหมวดหมู่ต้นทุน</label>
-                            <input type="text" id="preset-cat-name" placeholder="เช่น ค่าน้ำมันและพลังงานทอด" class="w-full p-2 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-red-500 focus:outline-none">
-                        </div>
-                        <div class="flex gap-2 justify-end">
-                            <button onclick="cancelCategoryEdit()" id="btn-cancel-cat" class="hidden px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-semibold cursor-pointer">ยกเลิก</button>
-                            <button onclick="saveCostCategoryPreset()" class="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-semibold cursor-pointer">บันทึกตัวเลือกหมวดหมู่</button>
-                        </div>
-                    </div>
-
-                    <!-- List of current cost presets -->
-                    <div class="overflow-y-auto max-h-[300px] border border-gray-100 rounded-lg">
-                        <table class="w-full text-xs text-left">
-                            <thead class="bg-gray-100 text-gray-600 uppercase font-semibold">
-                                <tr>
-                                    <th class="px-3 py-2">ชื่อหมวดหมู่ต้นทุนใน Dropdown</th>
-                                    <th class="px-3 py-2 text-center">จัดการตัวเลือก</th>
-                                </tr>
-                            </thead>
-                            <tbody id="category-presets-tbody" class="divide-y divide-gray-100">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
-        </div>
 
-        <!-- Footer / Reset Data Button -->
-        <div class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
-            <span class="text-xs text-gray-400">🍗 ระบบประมวลผลวิเคราะห์และเก็บข้อมูลบนฐานข้อมูล Supabase PostgreSQL (เชื่อมต่อแบบ Real-time)</span>
-            <button onclick="resetToDemoData()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-4 rounded-lg font-medium transition-colors cursor-pointer">
-                <i class="fa-solid fa-rotate-left mr-1"></i> ล้างข้อมูลและโหลดชุดตัวอย่างเพื่อทดลองใช้ใหม่
-            </button>
-        </div>
+            <!-- Footer / Reset Data Button -->
+            <div class="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
+                <span class="text-xs text-gray-400">🍗 ระบบประมวลผลวิเคราะห์และเก็บข้อมูลบนฐานข้อมูล Supabase PostgreSQL (เชื่อมต่อแบบ Real-time)</span>
+                <button onclick="resetToDemoData()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 px-4 rounded-lg font-medium transition-colors cursor-pointer">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> ล้างข้อมูลและโหลดชุดตัวอย่างเพื่อทดลองใช้ใหม่
+                </button>
+            </div>
 
+        </div>
     </div>
 
     <!-- BUSINESS APP CODE & DATA HANDLING -->
     <script>
+        // Supabase Client Reference
+        let supabaseClient = null;
+
         // State Management
         let productPresetsList = [];
         let costPresetsList = [];
@@ -467,6 +506,59 @@
                 toast.classList.add('opacity-0', 'translate-y-[-10px]');
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
+        }
+
+        // Supabase Login Handler
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const loginBtn = document.getElementById('btn-login');
+
+            if (!email || !password) {
+                showToast('กรุณากรอก Email และ Password ให้ครบถ้วน', 'error');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.innerText = 'กำลังเข้าสู่ระบบ...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                showToast('เข้าสู่ระบบสำเร็จ!', 'success');
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                
+                await fetchAllData();
+                calculateAndUpdateUI();
+            } catch (err) {
+                showToast(err.message || 'เข้าสู่ระบบล้มเหลว', 'error');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket mr-1"></i> เข้าสู่ระบบ';
+            }
+        }
+
+        // Supabase Logout Handler
+        async function handleLogout() {
+            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+                try {
+                    await supabaseClient.auth.signOut();
+                    showToast('ออกจากระบบเรียบร้อย', 'info');
+                    document.getElementById('app-container').classList.add('hidden');
+                    document.getElementById('login-overlay').classList.remove('hidden');
+                    // Clear inputs
+                    document.getElementById('login-email').value = '';
+                    document.getElementById('login-password').value = '';
+                } catch (err) {
+                    showToast('ไม่สามารถออกจากระบบได้', 'error');
+                }
+            }
         }
 
         // Fetch data from backend APIs
@@ -769,6 +861,7 @@
             });
         }
 
+        // (Other functions omitted/kept the same for brevity)
         function deleteCostItem(id) {
             fetch(`/api/costs/${id}`, { method: 'DELETE' })
             .then(r => r.json())
@@ -782,10 +875,6 @@
                 }
             });
         }
-
-        // ==========================================
-        //  ⚙️ SETTINGS & DYNAMIC DROPDOWN CONTROLLERS
-        // ==========================================
 
         function saveProductPreset() {
             const id = document.getElementById('edit-prod-id').value;
@@ -944,141 +1033,9 @@
             document.getElementById('btn-cancel-cat').classList.add('hidden');
         }
 
-        // --- RESET DEMO SYSTEM ---
-        function resetToDemoData() {
-            if (confirm('ระบบจะเขียนทับตัวเลขปัจจุบันของคุณทั้งหมดและเรียกข้อมูลชุดสาธิตตั้งต้นกลับมา เพื่อทดลองใช้งานใหม่ ยืนยันใช่หรือไม่?')) {
-                fetch('/api/reset', { method: 'POST' })
-                .then(r => r.json())
-                .then(async data => {
-                    if (data.error) {
-                        showToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
-                    } else {
-                        activePeriodFilter = 'all';
-                        changeTimePeriod('all');
-                        await fetchAllData();
-                        calculateAndUpdateUI();
-                        showToast('รีเซ็ตข้อมูลตัวอย่างเรียบร้อยแล้ว!', 'success');
-                    }
-                });
-            }
-        }
-
-        // ==================================================
-        //  FIFO MULTI-MENU INVENTORY DELETION CALCULATIONS
-        // ==================================================
-        function calculateInventoryDepletion() {
-            // คืนค่าสต็อกคงเหลือสะสมกลับจุดตั้งต้นก่อนคำนวณ FIFO ใหม่ในทุกๆ ครั้งที่มีการรีโหลดหรืออัปเดตข้อมูล
-            costsList.forEach(item => {
-                if (item.isPackaging) {
-                    item.used = 0;
-                    item.remaining = item.qty;
-                }
-            });
-
-            // จัดเรียงวันที่ยอดขายจากเก่าไปหาใหม่ (FIFO)
-            const chronologicalSales = [...salesList].sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            // คัดแยกและจัดเรียงคลังบรรจุภัณฑ์สะสมในต้นทุนจากล็อตเก่าไปหาล็อตใหม่
-            const packagingBatches = costsList.filter(item => item.isPackaging === true).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            chronologicalSales.forEach(sale => {
-                let remainingSalesQty = sale.sold;
-
-                for (let i = 0; i < packagingBatches.length; i++) {
-                    const batch = packagingBatches[i];
-                    if (remainingSalesQty <= 0) break;
-
-                    // ตรวจสอบการผูกมัดเมนูของบรรจุภัณฑ์นั้นๆ
-                    const isLinked = batch.linkedProducts && (
-                        batch.linkedProducts.includes('all_menus') || 
-                        batch.linkedProducts.includes(sale.name)
-                    );
-
-                    if (isLinked && batch.remaining > 0) {
-                        const deduction = Math.min(remainingSalesQty, batch.remaining);
-                        batch.remaining -= deduction;
-                        batch.used += deduction;
-                        remainingSalesQty -= deduction;
-                    }
-                }
-            });
-
-            // อัปเดตข้อมูลที่คำนวณได้กลับไปยัง costsList หลัก
-            costsList.forEach(originalItem => {
-                if (originalItem.isPackaging) {
-                    const calculated = packagingBatches.find(item => item.id === originalItem.id);
-                    if (calculated) {
-                        originalItem.used = calculated.used;
-                        originalItem.remaining = calculated.remaining;
-                    }
-                }
-            });
-        }
-
-        // ==================================================
-        //  MAIN RENDERER, MATH ENGINE & GRAPHICS COMPILER
-        // ==================================================
-        function calculateAndUpdateUI() {
-            if (!document.getElementById('sales-date').value) document.getElementById('sales-date').value = getTodayDateString();
-            if (!document.getElementById('cost-date').value) document.getElementById('cost-date').value = getTodayDateString();
-
-            // คำนวณ FIFO การตัดสต็อกกล่องอาหาร
-            calculateInventoryDepletion();
-
-            // แสดงรายการ Dropdown ในแท็บฟอร์ม
-            populateInputDropdowns();
-
-            // อัปเดตตารางหน้าตั้งค่า
-            renderSettingsTables();
-
-            // กรองประวัติในช่วงเวลาที่เลือก
-            const filteredSales = salesList.filter(item => checkDateInPeriod(item.date));
-            const filteredCosts = costsList.filter(item => checkDateInPeriod(item.date));
-
-            // 1. คำนวณยอดรายได้
-            let totalRevenue = 0;
-            let productSalesTotals = {};
-            productPresetsList.forEach(p => { productSalesTotals[p.name] = 0; });
-
-            filteredSales.forEach(item => {
-                const subTotal = item.price * item.sold;
-                totalRevenue += subTotal;
-                
-                if (productSalesTotals[item.name] !== undefined) {
-                    productSalesTotals[item.name] += subTotal;
-                } else {
-                    productSalesTotals[item.name] = subTotal;
-                }
-            });
-
-            // 2. คำนวณยอดต้นทุนรวมทั้งหมด
-            let totalCost = filteredCosts.reduce((sum, item) => sum + item.cost, 0);
-            const netProfit = totalRevenue - totalCost;
-            const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
-
-            // แสดงผลการ์ดสรุป KPI
-            document.getElementById('kpi-revenue').innerText = '฿' + totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
-            document.getElementById('kpi-cost').innerText = '฿' + totalCost.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
-            document.getElementById('kpi-profit').innerText = (netProfit >= 0 ? '+' : '-') + '฿' + Math.abs(netProfit).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
-            document.getElementById('kpi-margin').innerText = profitMargin.toFixed(1) + '%';
-
-            const profitCardValue = document.getElementById('kpi-profit');
-            if (netProfit < 0) {
-                profitCardValue.className = "text-2xl sm:text-3xl font-bold text-red-600";
-            } else {
-                profitCardValue.className = "text-2xl sm:text-3xl font-bold text-emerald-600";
-            }
-
-            // แสดงตารางประวัติยอดขายและรายจ่ายรวม
-            renderSalesRecordListTable();
-            renderUnifiedCostsRecordListTable();
-
-            // ประเมินสภาพและการเตือนสต็อกบรรจุภัณฑ์
-            renderHealthBannerAndAlerts(netProfit, profitMargin, totalRevenue, totalCost);
-
-            // แสดงกราฟวิเคราะห์ข้อมูลเชิงลึก
-            renderCharts(filteredCosts, productSalesTotals);
-        }
+        // ==========================================
+        //  ⚙️ SETTINGS & DYNAMIC DROPDOWN CONTROLLERS
+        // ==========================================
 
         function populateInputDropdowns() {
             // 1. ตัวเลือกเมนูยอดขาย
@@ -1147,7 +1104,6 @@
         }
 
         function renderSettingsTables() {
-            // 1. เมนูของทอด
             const prodTbody = document.getElementById('product-presets-tbody');
             if (productPresetsList.length === 0) {
                 prodTbody.innerHTML = `<tr><td colspan="3" class="px-3 py-4 text-center text-gray-400 font-light">ยังไม่มีตัวเลือกเมนูในระบบ</td></tr>`;
@@ -1164,7 +1120,6 @@
                 `).join('');
             }
 
-            // 2. หมวดหมู่รายจ่าย
             const catTbody = document.getElementById('category-presets-tbody');
             if (costPresetsList.length === 0) {
                 catTbody.innerHTML = `<tr><td colspan="2" class="px-3 py-4 text-center text-gray-400 font-light">ยังไม่มีตัวเลือกหมวดหมู่ต้นทุนในระบบ</td></tr>`;
@@ -1181,7 +1136,6 @@
             }
         }
 
-        // แสดงตารางประวัติยอดขาย (แท็บ 2)
         function renderSalesRecordListTable() {
             const tbody = document.getElementById('sales-table-body');
             document.getElementById('sales-count-badge').innerText = `${salesList.length} รายการ`;
@@ -1213,7 +1167,6 @@
             }).join('');
         }
 
-        // ตารางสรุปประวัติรายจ่ายรวม แบบแสดงสถานะบรรจุภัณฑ์ (แท็บ 3)
         function renderUnifiedCostsRecordListTable() {
             const tbody = document.getElementById('costs-table-body');
             document.getElementById('costs-count-badge').innerText = `${costsList.length} รายการ`;
@@ -1228,7 +1181,6 @@
                 const matchFilter = checkDateInPeriod(item.date);
                 const rowStyle = matchFilter ? 'bg-white hover:bg-red-50/10' : 'bg-gray-50 text-gray-400';
 
-                // รายละเอียดคอลัมน์ข้อมูลสต็อก
                 let stockInfoHTML = `<span class="text-gray-400 font-light text-[11px]">- ไม่มีประวัติตัดสต็อก -</span>`;
                 if (item.isPackaging) {
                     const remainingPercent = Math.max(0, Math.min(100, (item.remaining / item.qty) * 100));
@@ -1280,7 +1232,6 @@
             }).join('');
         }
 
-        // Helper: เปลี่ยนวันที่คริสต์ศักราชเป็น พ.ศ.
         function formatDateToThai(dateStr) {
             if (!dateStr) return "-";
             const parts = dateStr.split('-');
@@ -1291,7 +1242,6 @@
             return `${day}/${month}/${String(year).substring(2)}`;
         }
 
-        // ประเมินผลสุขภาพธุรกิจและแจ้งเตือนพัสดุกล่องอาหารใกล้หมด
         function renderHealthBannerAndAlerts(netProfit, profitMargin, totalRevenue, totalCost) {
             const banner = document.getElementById('health-banner');
             let periodLabel = "ทั้งหมด";
@@ -1301,7 +1251,6 @@
             if (activePeriodFilter === 'year') periodLabel = "ปีนี้";
             if (activePeriodFilter === 'all') periodLabel = "ทั้งหมดตั้งแต่เริ่มต้นบันทึกข้อมูล";
 
-            // กรองหาพัสดุกล่องบรรจุภัณฑ์ที่เหลือน้อยกว่าหรือเท่ากับ 5 ใบ
             const lowStockItems = costsList.filter(item => item.isPackaging && item.remaining <= 5);
             const alertPanel = document.getElementById('low-inventory-alerts');
             const alertContainer = document.getElementById('alert-items-container');
@@ -1371,14 +1320,12 @@
 
         // --- GRAPH COMPILERS ---
         function renderCharts(filteredCosts, productSalesTotals) {
-            // 1. Doughnut Chart สัดส่วนรายจ่าย
             if (costChart) costChart.destroy();
             const costCtx = document.getElementById('costBreakdownChart').getContext('2d');
             
             let categoryCostsMap = {};
             costPresetsList.forEach(c => { categoryCostsMap[c.name] = 0; });
 
-            // จำแนกประเภทต้นทุนจากข้อมูลรายจ่าย (รวมทั้งแบบทั่วไปและบรรจุภัณฑ์)
             filteredCosts.forEach(item => {
                 if (categoryCostsMap[item.category] !== undefined) {
                     categoryCostsMap[item.category] += item.cost;
@@ -1423,7 +1370,6 @@
                 }
             });
 
-            // 2. Bar Chart ยอดรวมรายได้ยอดขายแต่ละรายการ
             if (salesChart) salesChart.destroy();
             const salesCtx = document.getElementById('productSalesChart').getContext('2d');
 
@@ -1456,10 +1402,89 @@
             });
         }
 
-        // ดันระบบให้ทำงานเมื่อเริ่มเข้าหน้าเว็บ
+        // FIFO MULTI-MENU INVENTORY DELETION CALCULATIONS
+        function calculateInventoryDepletion() {
+            costsList.forEach(item => {
+                if (item.isPackaging) {
+                    item.used = 0;
+                    item.remaining = item.qty;
+                }
+            });
+
+            const chronologicalSales = [...salesList].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const packagingBatches = costsList.filter(item => item.isPackaging === true).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            chronologicalSales.forEach(sale => {
+                let remainingSalesQty = sale.sold;
+
+                for (let i = 0; i < packagingBatches.length; i++) {
+                    const batch = packagingBatches[i];
+                    if (remainingSalesQty <= 0) break;
+
+                    const isLinked = batch.linkedProducts && (
+                        batch.linkedProducts.includes('all_menus') || 
+                        batch.linkedProducts.includes(sale.name)
+                    );
+
+                    if (isLinked && batch.remaining > 0) {
+                        const deduction = Math.min(remainingSalesQty, batch.remaining);
+                        batch.remaining -= deduction;
+                        batch.used += deduction;
+                        remainingSalesQty -= deduction;
+                    }
+                }
+            });
+
+            costsList.forEach(originalItem => {
+                if (originalItem.isPackaging) {
+                    const calculated = packagingBatches.find(item => item.id === originalItem.id);
+                    if (calculated) {
+                        originalItem.used = calculated.used;
+                        originalItem.remaining = calculated.remaining;
+                    }
+                }
+            });
+        }
+
+        // Initialize App & Supabase Auth Client
         window.onload = async function() {
-            await fetchAllData();
-            calculateAndUpdateUI();
+            try {
+                // Fetch dynamic Supabase config from Backend API
+                const config = await fetch('/api/config').then(r => r.json());
+                if (!config.supabaseUrl || !config.supabaseKey) {
+                    throw new Error("Missing Supabase configuration");
+                }
+
+                // Initialize client
+                supabaseClient = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+
+                // Check active session
+                const { data: { session } } = await supabaseClient.auth.getSession();
+
+                if (session) {
+                    document.getElementById('app-container').classList.remove('hidden');
+                    await fetchAllData();
+                    calculateAndUpdateUI();
+                } else {
+                    document.getElementById('login-overlay').classList.remove('hidden');
+                }
+                
+                // Listen to auth changes
+                supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                    if (event === 'SIGNED_IN') {
+                        document.getElementById('login-overlay').classList.add('hidden');
+                        document.getElementById('app-container').classList.remove('hidden');
+                        await fetchAllData();
+                        calculateAndUpdateUI();
+                    } else if (event === 'SIGNED_OUT') {
+                        document.getElementById('app-container').classList.add('hidden');
+                        document.getElementById('login-overlay').classList.remove('hidden');
+                    }
+                });
+            } catch (err) {
+                console.error("Initialization error:", err);
+                showToast("ไม่สามารถเริ่มระบบได้: " + err.message, "error");
+            }
         };
     </script>
 </body>

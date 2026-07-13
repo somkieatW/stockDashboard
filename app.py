@@ -24,6 +24,13 @@ def serve_index():
 def serve_static(path):
     return send_from_directory('public', path)
 
+@app.route('/api/config')
+def get_config():
+    return jsonify({
+        "supabaseUrl": "https://bvgzgvqymubnpozcbnlc.supabase.co",
+        "supabaseKey": os.getenv('SUPABASE_ANON_KEY', 'sb_secret_fruePNgz_NRQnVxGZeGWMw_W_Hj34p1')
+    })
+
 # --- PRODUCT PRESETS API ---
 @app.route('/api/presets/products', methods=['GET'])
 def get_product_presets():
